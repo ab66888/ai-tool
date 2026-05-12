@@ -3,900 +3,823 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API Key 用量查询工具</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js">
-    </script>
+    <title>AI 用量监控面板</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         :root {
-            --bg: #f5f6f8;
-            --card-bg: #ffffff;
-            --border: #e2e6ed;
-            --text: #1a1d23;
-            --text-secondary: #5f6673;
-            --primary: #3b6ff5;
-            --accent-green: #10b981;
-            --accent-orange: #f59e0b;
-            --input-bg: #f9fafb;
-            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+            --primary: #2563eb;
+            --primary-light: #eff6ff;
+            --border: #e2e8f0;
+            --bg: #f8fafc;
+            --text: #1e293b;
+            --text-secondary: #64748b;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #10b981;
             --radius: 10px;
-            --radius-sm: 6px;
-            --font-mono: 'SF Mono','Cascadia Code','Consolas','Monaco',monospace;
-            --font-sans: 'Inter','Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: var(--font-sans); background: var(--bg); color: var(--text); padding: 16px; }
-        .container { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
-        .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; box-shadow: var(--shadow-sm); }
-        .card-header { font-size: 15px; font-weight: 600; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
-        .icon-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); }
-        .icon-dot.green { background: var(--accent-green); }
-        .icon-dot.orange { background: var(--accent-orange); }
-        .config-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
-        .config-item { display: flex; flex-direction: column; gap: 4px; min-width: 120px; }
-        .config-item label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; }
-        .config-item input, .config-item select { height: 36px; padding: 0 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--input-bg); outline: none; }
-        .config-item input:focus, .config-item select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,111,245,0.08); }
-        .btn { height: 36px; padding: 0 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid transparent; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: #f1f5f9;
+            color: var(--text);
+            line-height: 1.6;
+            padding: 16px;
+        }
+        .app { max-width: 1200px; margin: 0 auto; }
+        .header {
+            text-align: center;
+            padding: 24px 0 8px;
+        }
+        .header h1 { font-size: 22px; font-weight: 700; color: var(--text); }
+        .header p { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+        .card {
+            background: #fff;
+            border-radius: var(--radius);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+            padding: 20px 24px;
+            margin-bottom: 16px;
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .card-header h2 { font-size: 16px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 6px; }
+        .badge {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+        .badge-success { background: #d1fae5; color: #065f46; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+        .field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 140px; }
+        .field label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .field input, .field select {
+            padding: 9px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            background: #fff;
+            transition: border-color 0.15s;
+        }
+        .field input:focus, .field select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+        }
+        .btn {
+            padding: 9px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
         .btn-primary { background: var(--primary); color: #fff; }
-        .btn-primary:hover { background: #2b5de0; }
-        .btn-outline { background: #fff; color: var(--text-secondary); border-color: var(--border); }
-        .summary-row { display: flex; flex-wrap: wrap; gap: 16px; }
-        .summary-item { flex: 1; min-width: 120px; background: var(--input-bg); border-radius: var(--radius-sm); padding: 14px 12px; border: 1px solid var(--border); }
-        .summary-item .label { font-size: 11px; font-weight: 600; color: var(--text-secondary); }
-        .summary-item .value { font-size: 20px; font-weight: 700; font-family: var(--font-mono); }
-        .chart-wrap { height: 320px; margin-top: 8px; }
-        .chart-wrap.short { height: 280px; }
-        .table-wrap { overflow-x: auto; }
-        .table-wrap.scrollable { max-height: 440px; overflow-y: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 700px; }
-        table thead th { background: #f8f9fb; font-weight: 600; color: var(--text-secondary); font-size: 11px; padding: 10px; text-align: right; border-bottom: 2px solid var(--border); white-space: nowrap; }
-        table thead th:first-child { text-align: left; }
-        table tbody td { padding: 9px 10px; border-bottom: 1px solid #f0f1f4; text-align: right; font-family: var(--font-mono); font-size: 12px; white-space: nowrap; }
-        table tbody td:first-child { text-align: left; font-family: var(--font-sans); font-weight: 500; }
-        table tbody tr:hover { background: #fafbfc; }
-        .row-total { font-weight: 700; background: #f8f9fb; border-top: 2px solid var(--border); }
-        .coeff-select { font-size: 11px; padding: 3px 6px; border-radius: 4px; border: 1px solid var(--border); background: #fff; cursor: pointer; max-width: 200px; outline: none; }
-        .badge { font-size: 10px; padding: 2px 7px; border-radius: 10px; background: #eef3ff; color: #3b6ff5; }
-        .badge.multi { background: #fef3c7; color: #b45309; }
-        .search-wrap { position: relative; margin-bottom: 10px; }
-        .search-wrap input { width: 100%; height: 36px; padding: 0 12px 0 34px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--input-bg); }
-        .search-wrap .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #a0a7b3; }
-        .no-result { text-align: center; padding: 24px; color: var(--text-secondary); }
-        .cors-note { font-size: 11px; color: #ef4444; margin-top: 8px; padding: 8px 12px; background: #fef2f2; border-radius: var(--radius-sm); border: 1px solid #fecaca; display: none; }
-        @media (max-width: 768px) { .config-row { flex-direction: column; } .summary-row { flex-direction: column; } .chart-wrap { height: 240px; } }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-primary:disabled { background: #93c5fd; cursor: not-allowed; }
+        .btn-outline { background: #fff; border: 1px solid var(--border); color: var(--text); }
+        .btn-outline:hover { background: var(--bg); }
+        .btn-sm { padding: 5px 12px; font-size: 12px; }
+        .alert {
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 12px;
+            display: none;
+        }
+        .alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; display: block; }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .stat-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px 16px;
+            text-align: center;
+        }
+        .stat-card.highlight { border: 2px solid var(--warning); background: #fffdf0; }
+        .stat-card .stat-value { font-size: 22px; font-weight: 700; color: var(--text); }
+        .stat-card .stat-label { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th {
+            background: var(--bg);
+            font-weight: 600;
+            padding: 10px 10px;
+            text-align: left;
+            border-bottom: 2px solid var(--border);
+            font-size: 12px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+        td { padding: 9px 10px; border-bottom: 1px solid var(--border); }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .highlight-cell { background: #fffdf0; font-weight: 600; }
+        .search-box { position: relative; }
+        .search-box input {
+            width: 100%;
+            padding: 8px 12px 8px 32px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 13px;
+        }
+        .search-box .search-icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        .toggle-section {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 13px;
+            user-select: none;
+        }
+        .toggle-section:hover { text-decoration: underline; }
+        .hidden { display: none; }
+        .text-xs { font-size: 11px; color: var(--text-secondary); }
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-secondary); }
+        canvas { max-height: 280px; }
+        .mr-2 { margin-right: 8px; }
+        .mt-2 { margin-top: 8px; }
+        .mb-2 { margin-bottom: 8px; }
     </style>
 </head>
 <body>
-<div class="container">
-    <!-- API 配置卡片 -->
-    <div class="card" id="configCard">
-        <div class="card-header"><span class="icon-dot"></span>API 配置</div>
-        <div class="config-row">
-            <div class="config-item" style="flex:2"><label>API KEY</label><input type="text" id="apiKeyInput" placeholder="请输入 API Key (sk-...)" value=""></div>
-            <div class="config-item"><label>时间粒度</label><select id="granularitySelect"><option value="day" selected>按天</option><option value="hour">按小时</option></select></div>
-            <div class="config-item"><label>开始日期</label><input type="date" id="startDateInput" value="2026-04-30"></div>
-            <div class="config-item"><label>结束日期</label><input type="date" id="endDateInput" value="2026-05-12"></div>
-            <div class="config-item"><label>&nbsp;</label><div style="display:flex;gap:8px;"><button class="btn btn-primary" id="queryBtn">查询周期</button><button class="btn btn-outline" id="resetBtn">重置</button></div></div>
-        </div>
-        <div class="cors-note" id="corsNote">⚠ CORS 错误：请安装 Moesif CORS 浏览器插件。Key 仅保存在本地浏览器。</div>
+<div class="app">
+    <div class="header">
+        <h1>🤖 AI 模型用量监控</h1>
+        <p>实时查询 API 用量 · 内置抵扣系数表 · 精准计算最终消耗</p>
     </div>
 
-    <!-- 独立汇总卡片（新增原始总 Token） -->
-    <div class="card" id="summaryCard">
-        <div class="summary-row" id="summaryRow">
-            <div class="summary-item"><div class="label">原始总 Token (K)</div><div class="value small" id="sumRawTotal">--</div></div>
-            <div class="summary-item"><div class="label">原始输出 (K)</div><div class="value small" id="sumRawOut">--</div></div>
-            <div class="summary-item"><div class="label">原始输入 (K)</div><div class="value small" id="sumRawIn">--</div></div>
-            <div class="summary-item"><div class="label">最终消耗 (计费 Token K)</div><div class="value" id="sumBilled">--</div></div>
-        </div>
-    </div>
-
-    <!-- 用量趋势（原始 Token） -->
-    <div class="card"><div class="card-header"><span class="icon-dot green"></span>用量趋势（原始 Token）</div><div class="chart-wrap"><canvas id="rawTokenChart"></canvas></div></div>
-
-    <!-- 最终消耗趋势（计费 Token） -->
-    <div class="card"><div class="card-header"><span class="icon-dot orange"></span>最终消耗趋势（计费 Token）</div><div class="chart-wrap short"><canvas id="billedTokenChart"></canvas></div></div>
-
-    <!-- 按模型明细 -->
+    <!-- 配置卡片 -->
     <div class="card">
-        <div class="card-header"><span class="icon-dot"></span>按模型明细</div>
-        <div class="table-wrap"><table id="modelDetailTable"><thead><tr><th>模型名称</th><th>原始输入 (K)</th><th>原始输出 (K)</th><th>原始总计 (K)</th><th>输入系数</th><th>输出系数</th><th>最终消耗 (K)</th><th>抵扣区间选择</th></tr></thead><tbody id="modelDetailTbody"></tbody></table></div>
+        <div class="card-header">
+            <h2>🔑 API 配置</h2>
+            <span id="status-badge" class="badge badge-success">抵扣系数表已加载</span>
+        </div>
+        <div class="row">
+            <div class="field" style="flex:2;">
+                <label>API Key</label>
+                <input type="password" id="api-key" placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxx">
+            </div>
+            <div class="field">
+                <label>时间粒度</label>
+                <select id="granularity">
+                    <option value="day">按天</option>
+                    <option value="hour">按小时 (范围≤7天)</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>开始日期</label>
+                <input type="date" id="start-date">
+            </div>
+            <div class="field">
+                <label>结束日期</label>
+                <input type="date" id="end-date">
+            </div>
+            <div class="field" style="flex:0;">
+                <button class="btn btn-primary" id="btn-query" onclick="fetchUsage()">🔍 查询用量</button>
+            </div>
+        </div>
+        <p class="text-xs mt-2">⚠️ 如遇跨域错误(CORS)，请安装 <strong>Moesif CORS</strong> 浏览器插件。Key 仅保存在本地浏览器。</p>
     </div>
 
-    <!-- 模型抵扣系数参考表 -->
-    <div class="card">
-        <div class="card-header"><span class="icon-dot"></span>模型抵扣系数参考表</div>
-        <p style="font-size:11px;color:var(--text-secondary);margin-bottom:8px;">公式：最终消耗 = 原始输入 Token × 输入系数 + 原始输出 Token × 输出系数。系数不可编辑。</p>
-        <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" id="coeffSearchInput" placeholder="搜索模型名称（如 claude-4.5-sonnet）..."></div>
-        <div class="table-wrap scrollable"><table id="coeffRefTable"><thead><tr><th>模型名称</th><th>输入/输出</th><th>抵扣区间</th><th>抵扣时段</th><th>抵扣系数</th></tr></thead><tbody id="coeffRefTbody"></tbody></table><div class="no-result" id="coeffNoResult" style="display:none;">未找到匹配的模型</div></div>
+    <!-- 错误提示 -->
+    <div id="alert-box" class="alert"></div>
+
+    <!-- 结果区域 -->
+    <div id="results-area" class="hidden">
+        <!-- 用量概览 -->
+        <div class="card">
+            <div class="card-header">
+                <h2>📈 用量概览</h2>
+                <span class="text-xs">最终消耗 = 原始输入Token × 输入抵扣系数 + 原始输出Token × 输出抵扣系数</span>
+            </div>
+            <div class="summary-grid" id="summary-cards"></div>
+        </div>
+
+        <!-- 趋势图：原始Token -->
+        <div class="card">
+            <div class="card-header"><h2>📊 用量趋势（原始Token）</h2></div>
+            <canvas id="chart-raw"></canvas>
+        </div>
+
+        <!-- 趋势图：计费Token（最终消耗） -->
+        <div class="card">
+            <div class="card-header"><h2>📊 最终消耗趋势（计费Token）</h2></div>
+            <canvas id="chart-billing"></canvas>
+        </div>
+
+        <!-- 模型明细 -->
+        <div class="card">
+            <div class="card-header">
+                <h2>📋 按模型明细</h2>
+                <span class="text-xs">按最终消耗（计费Token）降序排列</span>
+            </div>
+            <div style="overflow-x: auto;">
+                <table id="model-table">
+                    <thead>
+                        <tr>
+                            <th>模型名称</th>
+                            <th class="text-right">原始输入(K)</th>
+                            <th class="text-right">原始输出(K)</th>
+                            <th class="text-right">原始总计(K)</th>
+                            <th class="text-center">输入系数</th>
+                            <th class="text-center">输出系数</th>
+                            <th class="text-right">最终消耗(K)</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 抵扣系数参考表 -->
+    <div class="card" id="coefficient-card">
+        <div class="card-header">
+            <h2>📋 模型抵扣系数参考表</h2>
+            <div class="search-box" style="max-width:300px;">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="coef-search" placeholder="搜索模型..." oninput="filterCoefficientTable()">
+            </div>
+        </div>
+        <p class="text-xs mb-2">
+            💡 最终消耗 = 原始输入Token × 输入系数 + 原始输出Token × 输出系数。<strong>系数来源于资源包抵扣规则，不可编辑。</strong>
+        </p>
+        <div style="max-height:400px; overflow-y:auto;">
+            <table id="coefficient-table">
+                <thead>
+                    <tr>
+                        <th>模型名称</th>
+                        <th class="text-center">输入系数</th>
+                        <th class="text-center">输出系数</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div id="coef-empty" class="empty-state hidden">
+            <p>没有匹配的模型</p>
+        </div>
     </div>
 </div>
 
 <script>
-(function() {
-    const API_BASE = 'https://api.qnaigc.com';
-    const USAGE_EP = '/v2/stat/usage';
+    // ============ 抵扣系数表（来源于资源包抵扣规则） ============
+    // 格式：模型关键字 -> { input: 输入系数, output: 输出系数 }
+    // 匹配规则：模型名包含关键字即匹配，优先匹配更长的关键字
+    const COEFFICIENT_TABLE = [
+        // { keyword: '模型关键字', input: 输入系数, output: 输出系数 }
+        // 注意：双关键字模型（如 x-ai/grok-4-fast）放在前面优先匹配
 
-    // ─────────── 完整的506项倍率原始文本 ───────────
-    const RAW_COEFF_TEXT = `deepseek-r1 模型输入 token-中国大陆	全时段	1
-deepseek-r1 模型输出 token-中国大陆	全时段	4
-deepseek v3 模型输入 token-中国大陆	全时段	0.5
-deepseek v3 模型输出 token-中国大陆	全时段	2
-deepseek-r1-32b 模型输入 token-中国大陆	全时段	0.37
-deepseek-r1-32b 模型输出 token-中国大陆	全时段	1.5
-qwen-max-2025-01-25 模型输入 token-中国大陆	全时段	0.6
-qwen-max-2025-01-25 模型输出 token-中国大陆	全时段	2.4
-qwen2.5-72b-instruct 模型输入 token-中国大陆	全时段	1
-qwen2.5-72b-instruct 模型输出 token-中国大陆	全时段	3
-qwen2-72b-instruct 模型输入 token-中国大陆	全时段	1
-qwen2-72b-instruct 模型输出 token-中国大陆	全时段	3
-qwen2-vl-72b-instruct 模型输入 token-中国大陆	全时段	4
-qwen2-vl-72b-instruct 模型输出 token-中国大陆	全时段	12
-qwq-32b 模型输入 token-中国大陆	全时段	0.5
-qwq-32b 模型输出 token-中国大陆	全时段	1.5
-qwen3-235b-a22b 模型输入 token-中国大陆	全时段	0.5
-qwen3-235b-a22b 模型输出 token-中国大陆	全时段	2
-qwen3-235b-a22b-think 模型输出 token-中国大陆	全时段	5
-qwen3-32b 模型输入 token-中国大陆	全时段	0.5
-qwen3-32b 模型输出 token-中国大陆	全时段	2
-qwen3-32b-think 模型输出 token-中国大陆	全时段	5
-qwen3-30b-a3b 模型输入 token-中国大陆	全时段	0.18
-qwen3-30b-a3b 模型输出 token-中国大陆	全时段	0.75
-qwen3-30b-a3b-think 模型输出 token-中国大陆	全时段	1.87
-qwen2.5-vl-7b-instruct 模型输入 token-中国大陆	全时段	0.5
-qwen2.5-vl-7b-instruct 模型输出 token-中国大陆	全时段	1.25
-qwen-vl-max-2025-01-25 模型输入 token-中国大陆	全时段	0.75
-qwen-vl-max-2025-01-25 模型输出 token-中国大陆	全时段	2.25
-doubao-1.5-pro-32k 模型输入 token-中国大陆	全时段	0.2
-doubao-1.5-pro-32k 模型输出 token-中国大陆	全时段	0.5
-doubao-1.5-vision-pro 模型输入 token-中国大陆	全时段	0.75
-doubao-1.5-vision-pro 模型输出 token-中国大陆	全时段	2.25
-doubao-1.5-thinking-pro 模型输入 token-中国大陆	全时段	1
-doubao-1.5-thinking-pro 模型输出 token-中国大陆	全时段	4
-qwen2.5-vl-72b-instruct 模型输入 token-中国大陆	全时段	4
-qwen2.5-vl-72b-instruct 模型输出 token-中国大陆	全时段	12
-gemini-2.0-flash-lite 模型输入 token-中国大陆	全时段	0.13
-gemini-2.0-flash-lite 模型输出 token-中国大陆	全时段	0.54
-gemini-2.0-flash 模型输入 token-中国大陆	全时段	0.27
-gemini-2.0-flash 模型输出 token-中国大陆	全时段	1.08
-claude-3.7-sonnet 模型输入 token-中国大陆	全时段	4.86
-claude-3.7-sonnet 模型输出 token-中国大陆	全时段	24.3
-claude-4.0-sonnet 模型输入 token-中国大陆	全时段	5.4
-claude-4.0-sonnet 模型输出 token-中国大陆	全时段	27
-qwen-turbo 模型输入 token-中国大陆	全时段	0.08
-qwen-turbo 模型输出 token-中国大陆	全时段	0.15
-kimi-k2 模型输入 token-中国大陆	全时段	1
-kimi-k2 模型输出 token-中国大陆	全时段	4
-gemini-2.5-flash 模型输入 token-中国大陆	全时段	0.54
-gemini-2.5-flash 模型输出 token-中国大陆	全时段	4.5
-gemini-2.5-flash-lite 模型输入token-中国大陆	全时段	0.18
-gemini-2.5-flash-lite模型输出token-中国大陆	全时段	0.72
-gemini-2.5-pro 模型输入token-中国大陆	全时段	4.5
-gemini-2.5-pro 模型输出token-中国大陆	全时段	27
-glm-4.5 模型输入token-中国大陆	全时段	1
-glm-4.5 模型输出token-中国大陆	全时段	4
-glm-4.5-air 模型输入token-中国大陆	全时段	0.5
-glm-4.5-air 模型输出token-中国大陆	全时段	2
-claude-4.1-opus 模型输入 token-中国大陆	全时段	27
-claude-4.1-opus 模型输出 token-中国大陆	全时段	135
-gpt-oss-120b 模型输入 token-中国大陆	全时段	0.27
-gpt-oss-120b 模型输出 token-中国大陆	全时段	1.35
-gpt-oss-20b 模型输入 token-中国大陆	全时段	0.18
-gpt-oss-20b 模型输出 token-中国大陆	全时段	0.9
-claude-4.0-opus 模型输入 token-中国大陆	全时段	27
-claude-4.0-opus 模型输出 token-中国大陆	全时段	135
-qwen3-235b-a22b-instruct-2507 模型输入 token-中国大陆	全时段	0.5
-qwen3-235b-a22b-instruct-2507 模型输出 token-中国大陆	全时段	2
-qwen3-235b-a22b-thinking-2507 模型输入 token-中国大陆	全时段	0.5
-qwen3-235b-a22b-thinking-2507 模型输出 token-中国大陆	全时段	5
-deepseek-v3.1 模型输入 token-中国大陆	全时段	1
-deepseek-v3.1 模型输出 token-中国大陆	全时段	3
-qwen3-coder-480b-a35b-instruct 模型输入 token-中国大陆	全时段	1.5
-qwen3-coder-480b-a35b-instruct 模型输出 token-中国大陆	全时段	6
-claude-3.5-sonnet 模型推理输入 token-中国大陆	全时段	5.4
-claude-3.5-sonnet 模型推理输出 token-中国大陆	全时段	27
-claude-3.5-haiku 模型推理输入 token-中国大陆	全时段	1.44
-claude-3.5-haiku 模型推理输出 token-中国大陆	全时段	7.2
-x-ai/grok-code-fast-1 模型推理输入 token-中国大陆	全时段	0.36
-x-ai/grok-code-fast-1 模型推理输出 token-中国大陆	全时段	2.7
-moonshotai/kimi-k2-0905 模型推理输入 token-中国大陆	全时段	1
-moonshotai/kimi-k2-0905 模型推理输出 token-中国大陆	全时段	4
-qwen3-max-preview 模型推理输入 token-中国大陆	全时段	1.5
-qwen3-max-preview 模型推理输出 token-中国大陆	全时段	6
-deepseek/deepseek-v3.1-terminus-thinking 模型推理输入 token-中国大陆	全时段	1
-deepseek/deepseek-v3.1-terminus-thinking 模型推理输出 token-中国大陆	全时段	3
-deepseek/deepseek-v3.1-terminus 模型推理输入 token-中国大陆	全时段	1
-deepseek/deepseek-v3.1-terminus 模型推理输出 token-中国大陆	全时段	3
-qwen3-max 模型推理输入 token-中国大陆	全时段	1.5
-qwen3-max 模型推理输出 token-中国大陆	全时段	6
-openai/gpt-5 模型推理输入 token-中国大陆	全时段	2.25
-openai/gpt-5 模型推理输出 token-中国大陆	全时段	18
-deepseek/deepseek-v3.2-exp-thinking 模型推理输入 token-中国大陆	全时段	0.5
-deepseek/deepseek-v3.2-exp-thinking 模型推理输出 token-中国大陆	全时段	0.75
-deepseek/deepseek-v3.2-exp 模型推理输入 token-中国大陆	全时段	0.5
-deepseek/deepseek-v3.2-exp 模型推理输出 token-中国大陆	全时段	0.75
-claude-4.5-sonnet 模型推理输入 token-中国大陆	全时段	5.4
-claude-4.5-sonnet 模型推理输出 token-中国大陆	全时段	27
-x-ai/grok-4-fast 模型推理输入 token-中国大陆	全时段	0.36
-x-ai/grok-4-fast 模型推理输出 token-中国大陆	全时段	0.9
-claude-4.5-haiku 模型推理输入 token-中国大陆	全时段	1.8
-claude-4.5-haiku 模型推理输出 token-中国大陆	全时段	9
-z-ai/glm-4.6输入-中国大陆	全时段	1.8
-z-ai/glm-4.6 模型推理输出 token-中国大陆	全时段	3.15
-deepseek-v3-search输入-中国大陆	全时段	0.5
-deepseek-v3-search输出-中国大陆	全时段	2
-deepseek-r1-search输入-中国大陆	全时段	1
-deepseek-r1-search输出-中国大陆	全时段	4
-claude-3.7-sonnet批量输入-中国大陆	全时段	2.7
-claude-3.7-sonnet批量输出-中国大陆	全时段	13.5
-claude-4.5-sonnet输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	5.4
-claude-4.5-sonnet输出(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	27
-claude-4.5-sonnet批量输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	2.7
-claude-4.5-sonnet批量输出(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	13.5
-claude-4.5-sonnet输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	10.8
-claude-4.5-sonnet输出(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	40.5
-claude-4.5-sonnet批量输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	2.7
-claude-4.5-sonnet批量输出(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	13.5
-x-ai/grok-4-fast输入(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.36
-x-ai/grok-4-fast输出(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.9
-x-ai/grok-4-fast输入(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	0.72
-x-ai/grok-4-fast输出(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	1.8
-gemini-2.5-flash-image 模型图片输出 token-中国大陆	全时段	54
-gemini-2.5-flash-image图片输入-中国大陆	全时段	0.54
-gemini-2.5-flash-image音频输入-中国大陆	全时段	1.8
-gemini-2.5-flash-image视频输入-中国大陆	全时段	0.54
-gemini-2.5-flash-image文本输入-中国大陆	全时段	0.54
-deepseek-v3批量输入-中国大陆	全时段	0.25
-deepseek-v3批量输出-中国大陆	全时段	1
-deepseek-r1批量输入-中国大陆	全时段	0.5
-deepseek-r1批量输出-中国大陆	全时段	2
-deepseek-v3-0324输入-中国大陆	全时段	0.5
-deepseek-v3-0324输出-中国大陆	全时段	2
-deepseek-v3-0324批量输入-中国大陆	全时段	0.25
-deepseek-v3-0324批量输出-中国大陆	全时段	1
-deepseek-r1-0528输入-中国大陆	全时段	1
-deepseek-r1-0528输出-中国大陆	全时段	4
-deepseek-r1-0528批量输入-中国大陆	全时段	0.5
-deepseek-r1-0528批量输出-中国大陆	全时段	2
-deepseek-v3.1批量输入-中国大陆	全时段	0.5
-deepseek-v3.1批量输出-中国大陆	全时段	1.5
-deepseek-v3-nocache输入-中国大陆	全时段	0.5
-deepseek-v3-nocache输出-中国大陆	全时段	2
-deepseek-v3-tool输入-中国大陆	全时段	0.5
-deepseek-v3-tool输出-中国大陆	全时段	2
-MiniMax-M1输入-中国大陆	全时段	1
-MiniMax-M1输出-中国大陆	全时段	4
-minimax/minimax-m2输入-中国大陆	全时段	0.53
-minimax/minimax-m2输出-中国大陆	全时段	2.1
-qwen3-next-80b-a3b-instruct输入-中国大陆	全时段	0.25
-qwen3-next-80b-a3b-instruct输出-中国大陆	全时段	1
-qwen3-next-80b-a3b-thinking输入-中国大陆	全时段	0.25
-qwen3-next-80b-a3b-thinking输出-中国大陆	全时段	2.5
-qwen3-max-preview输入(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	1.5
-qwen3-max-preview输出(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	6
-qwen3-max-preview输入(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	2.5
-qwen3-max-preview输出(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	10
-qwen3-max-preview输入(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	3.75
-qwen3-max-preview输出(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	15
-qwen3-coder-480b-a35b-instruct输入(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	1.5
-qwen3-coder-480b-a35b-instruct输出(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	6
-qwen3-coder-480b-a35b-instruct输入(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	2.25
-qwen3-coder-480b-a35b-instruct输出(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	9
-qwen3-coder-480b-a35b-instruct输入(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	3.75
-qwen3-coder-480b-a35b-instruct输出(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	15
-qwq-plus输入-中国大陆	全时段	0.5
-qwq-plus输出-中国大陆	全时段	1.5
-qwen3-32b思考输入-中国大陆	全时段	0.5
-qwen3-32b思考输出-中国大陆	全时段	5
-qwen3-32b非思考输入-中国大陆	全时段	0.5
-qwen3-32b非思考输出-中国大陆	全时段	2
-qwen3-30b-a3b思考输入-中国大陆	全时段	0.19
-qwen3-30b-a3b思考输出-中国大陆	全时段	1.88
-qwen3-30b-a3b非思考输入-中国大陆	全时段	0.19
-qwen3-30b-a3b非思考输出-中国大陆	全时段	0.75
-qwen3-235b-a22b思考输入-中国大陆	全时段	0.5
-qwen3-235b-a22b思考输出-中国大陆	全时段	5
-qwen3-235b-a22b非思考输入-中国大陆	全时段	0.5
-qwen3-235b-a22b非思考输出-中国大陆	全时段	2
-qwen2.5-omni-7b输入-中国大陆	全时段	0.15
-qwen2.5-omni-7b输出-中国大陆	全时段	0.6
-qwen-vl-max-latest输入-中国大陆	全时段	0.75
-qwen-vl-max-latest输出-中国大陆	全时段	2.25
-qwen-turbo思考输入-中国大陆	全时段	0.08
-qwen-turbo思考输出-中国大陆	全时段	0.75
-qwen-turbo非思考输入-中国大陆	全时段	0.08
-qwen-turbo非思考输出-中国大陆	全时段	0.15
-doubao-seed-1.6-thinking输入(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	0.2
-doubao-seed-1.6-thinking输出(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	2
-doubao-seed-1.6-thinking输入(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	0.3
-doubao-seed-1.6-thinking输出(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	4
-doubao-seed-1.6-thinking输入(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	0.6
-doubao-seed-1.6-thinking输出(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	6
-doubao-seed-1.6-flash输入(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	0.04
-doubao-seed-1.6-flash输出(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	0.38
-doubao-seed-1.6-flash输入(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	0.08
-doubao-seed-1.6-flash输出(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	0.75
-doubao-seed-1.6-flash输入(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	0.15
-doubao-seed-1.6-flash输出(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	1.5
-doubao-seed-1.6输入(输入区间：0-32000 输出区间：0-200)-中国大陆	全时段	0.2
-doubao-seed-1.6输出(输入区间：0-32000 输出区间：0-200)-中国大陆	全时段	0.5
-doubao-seed-1.6输入(输入区间：0-32000 输出区间：200-无限)-中国大陆	全时段	0.2
-doubao-seed-1.6输出(输入区间：0-32000 输出区间：200-无限)-中国大陆	全时段	2
-doubao-seed-1.6输入(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	0.3
-doubao-seed-1.6输出(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	4
-doubao-seed-1.6输入(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	0.6
-doubao-seed-1.6输出(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	6
-claude-3.5-sonnet批量输入-中国大陆	全时段	2.7
-claude-3.5-sonnet批量输出-中国大陆	全时段	13.5
-claude-3.5-haiku批量输入-中国大陆	全时段	0.72
-claude-3.5-haiku批量输出-中国大陆	全时段	3.6
-claude-4.0-opus批量输入-中国大陆	全时段	13.5
-claude-4.0-opus批量输出-中国大陆	全时段	67.5
-claude-4.0-sonnet输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	5.4
-claude-4.0-sonnet输出(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	27
-claude-4.0-sonnet批量输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	2.7
-claude-4.0-sonnet批量输出(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	13.5
-claude-4.0-sonnet输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	10.8
-claude-4.0-sonnet输出(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	40.5
-claude-4.0-sonnet批量输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	2.7
-claude-4.0-sonnet批量输出(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	13.5
-claude-4.1-opus批量输入-中国大陆	全时段	13.5
-claude-4.1-opus批量输出-中国大陆	全时段	67.5
-gemini-2.0-flash-lite批量输入-中国大陆	全时段	0.07
-gemini-2.0-flash-lite批量输出-中国大陆	全时段	0.27
-gemini-2.0-flash批量输入-中国大陆	全时段	0.14
-gemini-2.0-flash批量输出-中国大陆	全时段	0.54
-gemini-2.5-flash-lite批量输入-中国大陆	全时段	0.09
-gemini-2.5-flash-lite批量输出-中国大陆	全时段	0.36
-gemini-2.5-flash批量输入-中国大陆	全时段	0.27
-gemini-2.5-flash批量输出-中国大陆	全时段	2.25
-gemini-2.5-pro输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	2.25
-gemini-2.5-pro输出(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	18
-gemini-2.5-pro批量输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	1.12
-gemini-2.5-pro批量输出(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	9
-gemini-2.5-pro输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	4.5
-gemini-2.5-pro输出(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	27
-gemini-2.5-pro批量输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	1.12
-gemini-2.5-pro批量输出(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	9
-qwen3-max输入(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	1.5
-qwen3-max输出(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	6
-qwen3-max输入(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	2.5
-qwen3-max输出(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	10
-qwen3-max输入(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	3.75
-qwen3-max输出(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	15
-avatar-deepseek-v3输入-中国大陆	全时段	0.5
-avatar-deepseek-v3输出-中国大陆	全时段	2
-kvl-qwen2.5-vl-7b 模型推理输入 token-中国大陆	全时段	0.5
-kvl-qwen2.5-vl-7b 模型推理输出 token-中国大陆	全时段	1.25
-kvl-qwen2.5-vl-3b 模型推理输入 token-中国大陆	全时段	0.3
-kvl-qwen2.5-vl-3b 模型推理输出 token-中国大陆	全时段	0.9
-moonshotai/kimi-k2-thinking 模型推理输入 token-中国大陆	全时段	1
-moonshotai/kimi-k2-thinking 模型推理输出 token-中国大陆	全时段	4
-gemini-3.0-pro-preview输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	3.6
-gemini-3.0-pro-preview输出(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	21.6
-gemini-3.0-pro-preview输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	7.2
-gemini-3.0-pro-preview输出(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	32.4
-claude-4.5-opus输入-中国大陆	全时段	9
-claude-4.5-opus输出-中国大陆	全时段	45
-gemini-3.0-pro-image-preview输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	3.6
-gemini-3.0-pro-image-preview输出(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	21.6
-gemini-3.0-pro-image-preview图片输出(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	216
-gemini-3.0-pro-image-preview输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	7.2
-gemini-3.0-pro-image-preview输出(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	32.4
-gemini-3.0-pro-image-preview图片输出(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	216
-deepseek/deepseek-v3.2-251201输入-中国大陆	全时段	0.5
-deepseek/deepseek-v3.2-251201输出-中国大陆	全时段	0.75
-deepseek/deepseek-v3.2-speciale输入-中国大陆	全时段	0.5
-deepseek/deepseek-v3.2-speciale输出-中国大陆	全时段	0.75
-deepseek/deepseek-math-v2输入-中国大陆	全时段	1
-deepseek/deepseek-math-v2输出-中国大陆	全时段	4
-gemini-3.0-pro-image-preview文本输出(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	21.6
-gemini-3.0-pro-image-preview文本输出(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	21.6
-openai/gpt-5.2输入-中国大陆	全时段	3.15
-openai/gpt-5.2输出-中国大陆	全时段	25.2
-gemini-3.0-flash-preview输出-中国大陆	全时段	5.4
-gemini-3.0-flash-preview音频输入-中国大陆	全时段	1.8
-gemini-3.0-flash-preview文本输入-中国大陆	全时段	0.9
-x-ai/grok-4.1-fast-non-reasoning输出(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.9
-x-ai/grok-4.1-fast-non-reasoning缓存输入(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.09
-x-ai/grok-4.1-fast-non-reasoning非缓存输入(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.36
-x-ai/grok-4.1-fast-non-reasoning输出(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	1.8
-x-ai/grok-4.1-fast-non-reasoning缓存输入(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	0.18
-x-ai/grok-4.1-fast-non-reasoning非缓存输入(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	0.72
-x-ai/grok-4.1-fast-reasoning输出(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.9
-x-ai/grok-4.1-fast-reasoning缓存输入(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.09
-x-ai/grok-4.1-fast-reasoning非缓存输入(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.36
-x-ai/grok-4.1-fast-reasoning输出(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	1.8
-x-ai/grok-4.1-fast-reasoning缓存输入(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	0.18
-x-ai/grok-4.1-fast-reasoning非缓存输入(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	0.72
-x-ai/grok-4-fast-reasoning输出(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.9
-x-ai/grok-4-fast-reasoning缓存输入(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.09
-x-ai/grok-4-fast-reasoning非缓存输入(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.36
-x-ai/grok-4-fast-reasoning输出(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	1.8
-x-ai/grok-4-fast-reasoning缓存输入(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	0.18
-x-ai/grok-4-fast-reasoning非缓存输入(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	0.72
-x-ai/grok-4-fast-non-reasoning输出(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.9
-x-ai/grok-4-fast-non-reasoning缓存输入(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.09
-x-ai/grok-4-fast-non-reasoning非缓存输入(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.36
-x-ai/grok-4-fast-non-reasoning输出(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	1.8
-x-ai/grok-4-fast-non-reasoning缓存输入(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	0.18
-x-ai/grok-4-fast-non-reasoning非缓存输入(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	0.72
-x-ai/grok-4.1-fast输入-中国大陆	全时段	0.36
-x-ai/grok-4.1-fast输出-中国大陆	全时段	0.9
-z-ai/glm-4.7输入-中国大陆	全时段	0.79
-z-ai/glm-4.7输出-中国大陆	全时段	3.13
-minimax/minimax-m2.1输入-中国大陆	全时段	0.53
-minimax/minimax-m2.1输出-中国大陆	全时段	2.1
-stepfun-ai/gelab-zero-4b-preview输入-中国大陆	全时段	0.15
-stepfun-ai/gelab-zero-4b-preview输出-中国大陆	全时段	0.3
-z-ai/autoglm-phone-9b输入-中国大陆	全时段	0.15
-z-ai/autoglm-phone-9b输出-中国大陆	全时段	0.3
-xiaomi/mimo-v2-flash输入-中国大陆	全时段	0.18
-xiaomi/mimo-v2-flash输出-中国大陆	全时段	0.53
-gemini-2.5-flash-image 模型输入 token-中国大陆	全时段	0.54
-claude-3.7-sonnet缓存输入-中国大陆	全时段	0.54
-claude-3.7-sonnet缓存创建-中国大陆	全时段	6.75
-claude-3.7-sonnet非缓存输入-中国大陆	全时段	5.4
-gemini-2.5-flash缓存输入-中国大陆	全时段	0.06
-gemini-2.5-flash非缓存输入-中国大陆	全时段	0.54
-gemini-3.0-pro-preview缓存输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	0.36
-gemini-3.0-pro-preview非缓存输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	3.6
-gemini-3.0-pro-preview缓存输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	0.72
-gemini-3.0-pro-preview非缓存输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	7.2
-claude-3.5-sonnet缓存输入-中国大陆	全时段	0.54
-claude-3.5-sonnet缓存创建-中国大陆	全时段	6.75
-claude-3.5-sonnet非缓存输入-中国大陆	全时段	5.4
-claude-3.5-haiku缓存输入-中国大陆	全时段	0.15
-claude-3.5-haiku缓存创建-中国大陆	全时段	1.8
-claude-3.5-haiku非缓存输入-中国大陆	全时段	1.44
-claude-4.0-opus缓存输入-中国大陆	全时段	2.7
-claude-4.0-opus缓存创建-中国大陆	全时段	33.75
-claude-4.0-opus非缓存输入-中国大陆	全时段	27
-claude-4.5-opus缓存输入-中国大陆	全时段	0.9
-claude-4.5-opus缓存创建-中国大陆	全时段	11.25
-claude-4.5-opus非缓存输入-中国大陆	全时段	9
-claude-4.5-haiku缓存输入-中国大陆	全时段	0.18
-claude-4.5-haiku缓存创建-中国大陆	全时段	2.25
-claude-4.5-haiku非缓存输入-中国大陆	全时段	1.8
-claude-4.5-sonnet缓存输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	0.54
-claude-4.5-sonnet缓存创建(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	6.75
-claude-4.5-sonnet非缓存输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	5.4
-claude-4.5-sonnet缓存输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	1.08
-claude-4.5-sonnet缓存创建(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	13.5
-claude-4.5-sonnet非缓存输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	10.8
-claude-4.0-sonnet缓存输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	0.54
-claude-4.0-sonnet缓存创建(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	6.75
-claude-4.0-sonnet非缓存输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	5.4
-claude-4.0-sonnet缓存输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	1.08
-claude-4.0-sonnet缓存创建(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	13.5
-claude-4.0-sonnet非缓存输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	10.8
-claude-4.1-opus缓存输入-中国大陆	全时段	2.7
-claude-4.1-opus缓存创建-中国大陆	全时段	33.75
-claude-4.1-opus非缓存输入-中国大陆	全时段	27
-qwen3-max-2026-01-23输入(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	0.63
-qwen3-max-2026-01-23输出(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	2.5
-qwen3-max-2026-01-23输入(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	1
-qwen3-max-2026-01-23输出(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	4
-qwen3-max-2026-01-23输入(输入区间：128000-256000 输出区间：0-无限)-中国大陆	全时段	1.75
-qwen3-max-2026-01-23输出(输入区间：128000-256000 输出区间：0-无限)-中国大陆	全时段	7
-moonshotai/kimi-k2.5输入-中国大陆	全时段	1
-moonshotai/kimi-k2.5输出-中国大陆	全时段	5.25
-qwen3-30b-a3b-thinking-2507输入-中国大陆	全时段	0.19
-qwen3-30b-a3b-thinking-2507输出-中国大陆	全时段	1.9
-qwen3-30b-a3b-instruct-2507输入-中国大陆	全时段	0.19
-qwen3-30b-a3b-instruct-2507输出-中国大陆	全时段	0.75
-openai/gpt-5.2-codex输入-中国大陆	全时段	3.15
-openai/gpt-5.2-codex输出-中国大陆	全时段	25.2
-claude-4.6-opus输出(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	45
-claude-4.6-opus缓存输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	0.9
-claude-4.6-opus缓存创建(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	11.25
-claude-4.6-opus非缓存输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	9
-claude-4.6-opus输出(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	67.5
-claude-4.6-opus缓存输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	1.8
-claude-4.6-opus缓存创建(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	22.5
-claude-4.6-opus非缓存输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	18
-openai/gpt-5.3-codex输入-中国大陆	全时段	3.15
-openai/gpt-5.3-codex输出-中国大陆	全时段	25.2
-qwen3-vl-30b-a3b-instruct输入-中国大陆	全时段	0.19
-qwen3-vl-30b-a3b-instruct输出-中国大陆	全时段	0.75
-qwen3-vl-30b-a3b-thinking输入-中国大陆	全时段	0.19
-qwen3-vl-30b-a3b-thinking输出-中国大陆	全时段	1.88
-z-ai/glm-5输入(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	1
-z-ai/glm-5输出(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	4.5
-z-ai/glm-5输入(输入区间：32000-无限 输出区间：0-无限)-中国大陆	全时段	1.5
-z-ai/glm-5输出(输入区间：32000-无限 输出区间：0-无限)-中国大陆	全时段	5.5
-minimax/minimax-m2.5输入-中国大陆	全时段	0.53
-minimax/minimax-m2.5输出-中国大陆	全时段	2.1
-qwen3.5-397b-a17b输入(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.3
-qwen3.5-397b-a17b输出(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	1.8
-qwen3.5-397b-a17b输入(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	0.75
-qwen3.5-397b-a17b输出(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	4.5
-gemini-3.1-pro-preview输出(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	21.6
-gemini-3.1-pro-preview缓存输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	0.36
-gemini-3.1-pro-preview非缓存输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	3.6
-gemini-3.1-pro-preview输出(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	32.4
-gemini-3.1-pro-preview缓存输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	0.72
-gemini-3.1-pro-preview非缓存输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	7.2
-claude-4.6-sonnet输出(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	27
-claude-4.6-sonnet缓存输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	0.54
-claude-4.6-sonnet缓存创建(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	6.75
-claude-4.6-sonnet非缓存输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	5.4
-claude-4.6-sonnet输出(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	40.5
-claude-4.6-sonnet缓存输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	1.08
-claude-4.6-sonnet缓存创建(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	13.5
-claude-4.6-sonnet非缓存输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	10.8
-doubao-seed-2.0-lite输入(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	0.15
-doubao-seed-2.0-lite输出(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	0.9
-doubao-seed-2.0-lite输入(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	0.23
-doubao-seed-2.0-lite输出(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	1.35
-doubao-seed-2.0-lite输入(输入区间：128000-256000 输出区间：0-无限)-中国大陆	全时段	0.45
-doubao-seed-2.0-lite输出(输入区间：128000-256000 输出区间：0-无限)-中国大陆	全时段	2.7
-doubao-seed-2.0-mini输入(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	0.05
-doubao-seed-2.0-mini输出(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	0.5
-doubao-seed-2.0-mini输入(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	0.1
-doubao-seed-2.0-mini输出(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	1
-doubao-seed-2.0-mini输入(输入区间：128000-256000 输出区间：0-无限)-中国大陆	全时段	0.2
-doubao-seed-2.0-mini输出(输入区间：128000-256000 输出区间：0-无限)-中国大陆	全时段	2
-doubao-seed-2.0-pro输入(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	0.8
-doubao-seed-2.0-pro输出(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	4
-doubao-seed-2.0-pro输入(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	1.2
-doubao-seed-2.0-pro输出(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	6
-doubao-seed-2.0-pro输入(输入区间：128000-256000 输出区间：0-无限)-中国大陆	全时段	2.4
-doubao-seed-2.0-pro输出(输入区间：128000-256000 输出区间：0-无限)-中国大陆	全时段	12
-doubao-seed-2.0-code输入(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	0.8
-doubao-seed-2.0-code输出(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	4
-doubao-seed-2.0-code输入(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	1.2
-doubao-seed-2.0-code输出(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	6
-doubao-seed-2.0-code输入(输入区间：128000-256000 输出区间：0-无限)-中国大陆	全时段	2.4
-doubao-seed-2.0-code输出(输入区间：128000-256000 输出区间：0-无限)-中国大陆	全时段	12
-minimax/minimax-m2.5-highspeed输入-中国大陆	全时段	1.05
-minimax/minimax-m2.5-highspeed输出-中国大陆	全时段	4.2
-openai/gpt-5-nano输入-中国大陆	全时段	0.09
-openai/gpt-5-nano输出-中国大陆	全时段	0.72
-gemini-3.1-flash-image-preview输入-中国大陆	全时段	0.9
-gemini-3.1-flash-image-preview图片输出-中国大陆	全时段	108
-gemini-3.1-flash-image-preview文本输出-中国大陆	全时段	5.4
-openai/gpt-5-chat输入-中国大陆	全时段	2.25
-openai/gpt-5-chat输出-中国大陆	全时段	18
-openai/gpt-5.2-chat输入-中国大陆	全时段	3.15
-openai/gpt-5.2-chat输出-中国大陆	全时段	25.2
-openai/gpt-5-mini输入-中国大陆	全时段	0.45
-openai/gpt-5-mini输出-中国大陆	全时段	3.6
-openai/gpt-5-pro输入-中国大陆	全时段	27
-openai/gpt-5-pro输出-中国大陆	全时段	216
-gemini-3.1-flash-lite-preview输出-中国大陆	全时段	2.71
-gemini-3.1-flash-lite-preview音频输入-中国大陆	全时段	0.9
-gemini-3.1-flash-lite-preview文本输入-中国大陆	全时段	0.45
-openai/gpt-5.4输入-中国大陆	全时段	4.5
-openai/gpt-5.4输出-中国大陆	全时段	27
-openai/gpt-5.4-mini输入-中国大陆	全时段	1.35
-openai/gpt-5.4-mini输出-中国大陆	全时段	8.1
-openai/gpt-5.4输入(输入区间：0-272000 输出区间：0-无限)-中国大陆	全时段	4.5
-openai/gpt-5.4输出(输入区间：0-272000 输出区间：0-无限)-中国大陆	全时段	27
-openai/gpt-5.4输入(输入区间：272000-无限 输出区间：0-无限)-中国大陆	全时段	9
-openai/gpt-5.4输出(输入区间：272000-无限 输出区间：0-无限)-中国大陆	全时段	40.5
-openai/gpt-5.4-pro输入(输入区间：0-272000 输出区间：0-无限)-中国大陆	全时段	54
-openai/gpt-5.4-pro输出(输入区间：0-272000 输出区间：0-无限)-中国大陆	全时段	324
-openai/gpt-5.4-pro输入(输入区间：272000-无限 输出区间：0-无限)-中国大陆	全时段	108
-openai/gpt-5.4-pro输出(输入区间：272000-无限 输出区间：0-无限)-中国大陆	全时段	486
-minimax/minimax-m2.7输入-中国大陆	全时段	0.52
-minimax/minimax-m2.7输出-中国大陆	全时段	2.1
-openai/gpt-5.4-nano输入-中国大陆	全时段	0.36
-openai/gpt-5.4-nano输出-中国大陆	全时段	2.25
-qwen/qwen3.5-plus输出(输入区间：256000-无限 输出区间：0-无限)-中国大陆	全时段	6
-qwen/qwen3.5-plus缓存输入(输入区间：256000-无限 输出区间：0-无限)-中国大陆	全时段	0.1
-qwen/qwen3.5-plus缓存创建(输入区间：256000-无限 输出区间：0-无限)-中国大陆	全时段	1.25
-qwen/qwen3.5-plus非缓存输入(输入区间：256000-无限 输出区间：0-无限)-中国大陆	全时段	1
-qwen/qwen3.5-plus输出(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	1.2
-qwen/qwen3.5-plus缓存输入(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.02
-qwen/qwen3.5-plus缓存创建(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.25
-qwen/qwen3.5-plus非缓存输入(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.2
-qwen/qwen3.5-plus输出(输入区间：128000-256000 输出区间：0-无限)-中国大陆	全时段	3
-qwen/qwen3.5-plus缓存输入(输入区间：128000-256000 输出区间：0-无限)-中国大陆	全时段	0.05
-qwen/qwen3.5-plus缓存创建(输入区间：128000-256000 输出区间：0-无限)-中国大陆	全时段	0.63
-qwen/qwen3.5-plus非缓存输入(输入区间：128000-256000 输出区间：0-无限)-中国大陆	全时段	0.5
-qwen/qwen3.6-plus输出(输入区间：256000-无限 输出区间：0-无限)-中国大陆	全时段	12
-qwen/qwen3.6-plus缓存输入(输入区间：256000-无限 输出区间：0-无限)-中国大陆	全时段	0.2
-qwen/qwen3.6-plus缓存创建(输入区间：256000-无限 输出区间：0-无限)-中国大陆	全时段	2.5
-qwen/qwen3.6-plus非缓存输入(输入区间：256000-无限 输出区间：0-无限)-中国大陆	全时段	2
-qwen/qwen3.6-plus输出(输入区间：0-256000 输出区间：0-无限)-中国大陆	全时段	3
-qwen/qwen3.6-plus缓存输入(输入区间：0-256000 输出区间：0-无限)-中国大陆	全时段	0.05
-qwen/qwen3.6-plus缓存创建(输入区间：0-256000 输出区间：0-无限)-中国大陆	全时段	0.63
-qwen/qwen3.6-plus非缓存输入(输入区间：0-256000 输出区间：0-无限)-中国大陆	全时段	0.5
-z-ai/glm-5.1输入(输入区间：32000-无限 输出区间：0-无限)-中国大陆	全时段	2
-z-ai/glm-5.1输出(输入区间：32000-无限 输出区间：0-无限)-中国大陆	全时段	7
-z-ai/glm-5.1输入(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	1.5
-z-ai/glm-5.1输出(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	6
-anthropic/claude-4.7-opus输出-中国大陆	全时段	45
-anthropic/claude-4.7-opus缓存输入-中国大陆	全时段	0.9
-anthropic/claude-4.7-opus缓存创建-中国大陆	全时段	11.25
-anthropic/claude-4.7-opus非缓存输入-中国大陆	全时段	9
-moonshotai/kimi-k2.6输入-中国大陆	全时段	1.63
-moonshotai/kimi-k2.6输出-中国大陆	全时段	6.75
-openai/gpt-image-2图片输入-中国大陆	全时段	14.4
-openai/gpt-image-2图片输出-中国大陆	全时段	54
-openai/gpt-image-2文本输入-中国大陆	全时段	9
-deepseek/deepseek-v4-flash输入-中国大陆	全时段	0.25
-deepseek/deepseek-v4-flash输出-中国大陆	全时段	0.5
-deepseek/deepseek-v4-pro输入-中国大陆	全时段	3
-deepseek/deepseek-v4-pro输出-中国大陆	全时段	6
-openai/gpt-5.5输入(输入区间：272000-无限 输出区间：0-无限)-中国大陆	全时段	9
-openai/gpt-5.5输出(输入区间：272000-无限 输出区间：0-无限)-中国大陆	全时段	54
-openai/gpt-5.5输入(输入区间：0-272000 输出区间：0-无限)-中国大陆	全时段	18
-openai/gpt-5.5输出(输入区间：0-272000 输出区间：0-无限)-中国大陆	全时段	81`;
+        // GPT 系列
+        { keyword: 'gpt-5.4-pro', input: 54, output: 324, inputRange: [0, 272000], outputRange: [0, Infinity] },
+        { keyword: 'gpt-5.4-pro', input: 108, output: 486, inputRange: [272000, Infinity], outputRange: [0, Infinity] },
+        { keyword: 'gpt-5.4-mini', input: 1.35, output: 8.1 },
+        { keyword: 'gpt-5.4-nano', input: 0.36, output: 2.25 },
+        { keyword: 'gpt-5.4', input: 4.5, output: 27, inputRange: [0, 272000], outputRange: [0, Infinity] },
+        { keyword: 'gpt-5.4', input: 9, output: 40.5, inputRange: [272000, Infinity], outputRange: [0, Infinity] },
+        { keyword: 'gpt-5.5', input: 18, output: 81, inputRange: [0, 272000], outputRange: [0, Infinity] },
+        { keyword: 'gpt-5.5', input: 9, output: 54, inputRange: [272000, Infinity], outputRange: [0, Infinity] },
+        { keyword: 'gpt-5.3-codex', input: 3.15, output: 25.2 },
+        { keyword: 'gpt-5.2-codex', input: 3.15, output: 25.2 },
+        { keyword: 'gpt-5.2-chat', input: 3.15, output: 25.2 },
+        { keyword: 'gpt-5.2', input: 3.15, output: 25.2 },
+        { keyword: 'gpt-5-chat', input: 2.25, output: 18 },
+        { keyword: 'gpt-5-mini', input: 0.45, output: 3.6 },
+        { keyword: 'gpt-5-nano', input: 0.09, output: 0.72 },
+        { keyword: 'gpt-5-pro', input: 27, output: 216 },
+        { keyword: 'gpt-5', input: 2.25, output: 18 },
+        { keyword: 'gpt-image-2', input: 9, output: 54 },
+        { keyword: 'gpt-oss-120b', input: 0.27, output: 1.35 },
+        { keyword: 'gpt-oss-20b', input: 0.18, output: 0.9 },
 
-    // ─────────── 解析构建 ───────────
-    const coeffMap = {};
-    const allRefEntries = [];
+        // Claude 系列
+        { keyword: 'claude-4.7-opus', input: 9, output: 45 },
+        { keyword: 'claude-4.6-opus', input: 9, output: 45, inputRange: [0, 200000], outputRange: [0, Infinity] },
+        { keyword: 'claude-4.6-opus', input: 18, output: 67.5, inputRange: [200000, Infinity], outputRange: [0, Infinity] },
+        { keyword: 'claude-4.6-sonnet', input: 5.4, output: 27, inputRange: [0, 200000], outputRange: [0, Infinity] },
+        { keyword: 'claude-4.6-sonnet', input: 10.8, output: 40.5, inputRange: [200000, Infinity], outputRange: [0, Infinity] },
+        { keyword: 'claude-4.5-opus', input: 9, output: 45 },
+        { keyword: 'claude-4.5-sonnet', input: 5.4, output: 27, inputRange: [0, 200000], outputRange: [0, Infinity] },
+        { keyword: 'claude-4.5-sonnet', input: 10.8, output: 40.5, inputRange: [200000, Infinity], outputRange: [0, Infinity] },
+        { keyword: 'claude-4.5-haiku', input: 1.8, output: 9 },
+        { keyword: 'claude-4.1-opus', input: 27, output: 135 },
+        { keyword: 'claude-4.0-opus', input: 27, output: 135 },
+        { keyword: 'claude-4.0-sonnet', input: 5.4, output: 27, inputRange: [0, 200000], outputRange: [0, Infinity] },
+        { keyword: 'claude-4.0-sonnet', input: 10.8, output: 40.5, inputRange: [200000, Infinity], outputRange: [0, Infinity] },
+        { keyword: 'claude-3.7-sonnet', input: 5.4, output: 24.3 },
+        { keyword: 'claude-3.5-sonnet', input: 5.4, output: 27 },
+        { keyword: 'claude-3.5-haiku', input: 1.44, output: 7.2 },
 
-    const lines = RAW_COEFF_TEXT.split('\n').filter(l => l.trim() !== '');
-    lines.forEach(line => {
-        const parts = line.split('\t');
-        if (parts.length < 3) return;
-        const rawName = parts[0].trim();
-        const period = parts[1]?.trim() || '全时段';
-        const coeff = parseFloat(parts[2]);
-        if (isNaN(coeff)) return;
+        // Gemini 系列
+        { keyword: 'gemini-3.1-pro-preview', input: 3.6, output: 21.6, inputRange: [0, 200000], outputRange: [0, Infinity] },
+        { keyword: 'gemini-3.1-pro-preview', input: 7.2, output: 32.4, inputRange: [200000, Infinity], outputRange: [0, Infinity] },
+        { keyword: 'gemini-3.1-flash-lite-preview', input: 0.45, output: 2.71 },
+        { keyword: 'gemini-3.1-flash-image-preview', input: 0.9, output: 5.4 },
+        { keyword: 'gemini-3.0-pro-image-preview', input: 3.6, output: 21.6, inputRange: [0, 200000], outputRange: [0, Infinity] },
+        { keyword: 'gemini-3.0-pro-image-preview', input: 7.2, output: 32.4, inputRange: [200000, Infinity], outputRange: [0, Infinity] },
+        { keyword: 'gemini-3.0-pro-preview', input: 3.6, output: 21.6, inputRange: [0, 200000], outputRange: [0, Infinity] },
+        { keyword: 'gemini-3.0-pro-preview', input: 7.2, output: 32.4, inputRange: [200000, Infinity], outputRange: [0, Infinity] },
+        { keyword: 'gemini-3.0-flash-preview', input: 0.9, output: 5.4 },
+        { keyword: 'gemini-2.5-pro', input: 2.25, output: 18, inputRange: [0, 200000], outputRange: [0, Infinity] },
+        { keyword: 'gemini-2.5-pro', input: 4.5, output: 27, inputRange: [200000, Infinity], outputRange: [0, Infinity] },
+        { keyword: 'gemini-2.5-flash-lite', input: 0.18, output: 0.72 },
+        { keyword: 'gemini-2.5-flash-image', input: 0.54, output: 54 },
+        { keyword: 'gemini-2.5-flash', input: 0.54, output: 4.5 },
+        { keyword: 'gemini-2.0-flash-lite', input: 0.13, output: 0.54 },
+        { keyword: 'gemini-2.0-flash', input: 0.27, output: 1.08 },
 
-        let modelName = '';
-        let ioType = '';
-        let tierKey = 'standard';
-        let rangeDesc = '-';
+        // DeepSeek 系列
+        { keyword: 'deepseek-v4-pro', input: 3, output: 6 },
+        { keyword: 'deepseek-v4-flash', input: 0.25, output: 0.5 },
+        { keyword: 'deepseek-v3.2-speciale', input: 0.5, output: 0.75 },
+        { keyword: 'deepseek-v3.2-exp-thinking', input: 0.5, output: 0.75 },
+        { keyword: 'deepseek-v3.2-exp', input: 0.5, output: 0.75 },
+        { keyword: 'deepseek-v3.2-251201', input: 0.5, output: 0.75 },
+        { keyword: 'deepseek-v3.1-terminus-thinking', input: 1, output: 3 },
+        { keyword: 'deepseek-v3.1-terminus', input: 1, output: 3 },
+        { keyword: 'deepseek-v3.1', input: 1, output: 3 },
+        { keyword: 'deepseek-v3-search', input: 0.5, output: 2 },
+        { keyword: 'deepseek-v3-nocache', input: 0.5, output: 2 },
+        { keyword: 'deepseek-v3-tool', input: 0.5, output: 2 },
+        { keyword: 'deepseek-v3-0324', input: 0.5, output: 2 },
+        { keyword: 'deepseek-v3', input: 0.5, output: 2 },
+        { keyword: 'deepseek-r1-search', input: 1, output: 4 },
+        { keyword: 'deepseek-r1-0528', input: 1, output: 4 },
+        { keyword: 'deepseek-r1-32b', input: 0.37, output: 1.5 },
+        { keyword: 'deepseek-r1', input: 1, output: 4 },
+        { keyword: 'deepseek-math-v2', input: 1, output: 4 },
 
-        const bracketMatch = rawName.match(/^(.+?)(输入|输出|图片输入|图片输出|文本输入|文本输出|音频输入|视频输入|缓存输入|缓存创建|非缓存输入)(.*)$/);
-        if (bracketMatch) {
-            modelName = bracketMatch[1].replace(/\s*模型\s*(推理)?/g, '').trim();
-            ioType = bracketMatch[2].trim();
-            const rest = bracketMatch[3] || '';
-            const inputRangeMatch = rest.match(/输入区间[：:]\s*(\d+[-~]\d+|无限|\d+[-~]无限)/);
-            if (inputRangeMatch) {
-                rangeDesc = inputRangeMatch[1].replace(/[-~]/g, '-').replace(/\s/g, '');
-                tierKey = rangeDesc;
-            } else if (rest.includes('批量')) {
-                tierKey = 'batch';
-                rangeDesc = '-';
-            } else {
-                tierKey = 'standard';
-                rangeDesc = '-';
+        // Qwen 系列
+        { keyword: 'qwen3.5-397b-a17b', input: 0.3, output: 1.8, inputRange: [0, 128000], outputRange: [0, Infinity] },
+        { keyword: 'qwen3.5-397b-a17b', input: 0.75, output: 4.5, inputRange: [128000, Infinity], outputRange: [0, Infinity] },
+        { keyword: 'qwen3.5-plus', input: 0.2, output: 1.2, inputRange: [0, 128000], outputRange: [0, Infinity] },
+        { keyword: 'qwen3.5-plus', input: 0.5, output: 3, inputRange: [128000, 256000], outputRange: [0, Infinity] },
+        { keyword: 'qwen3.5-plus', input: 1, output: 6, inputRange: [256000, Infinity], outputRange: [0, Infinity] },
+        { keyword: 'qwen3.6-plus', input: 0.5, output: 3, inputRange: [0, 256000], outputRange: [0, Infinity] },
+        { keyword: 'qwen3.6-plus', input: 2, output: 12, inputRange: [256000, Infinity], outputRange: [0, Infinity] },
+        { keyword: 'qwen3-max-2026-01-23', input: 0.63, output: 2.5, inputRange: [0, 32000], outputRange: [0, Infinity] },
+        { keyword: 'qwen3-max-2026-01-23', input: 1, output: 4, inputRange: [32000, 128000], outputRange: [0, Infinity] },
+        { keyword: 'qwen3-max-2026-01-23', input: 1.75, output: 7, inputRange: [128000, 256000], outputRange: [0, Infinity] },
+        { keyword: 'qwen3-max-preview', input: 1.5, output: 6, inputRange: [0, 32000], outputRange: [0, Infinity] },
+        { keyword: 'qwen3-max-preview', input: 2.5, output: 10, inputRange: [32000, 128000], outputRange: [0, Infinity] },
+        { keyword: 'qwen3-max-preview', input: 3.75, output: 15, inputRange: [128000, Infinity], outputRange: [0, Infinity] },
+        { keyword: 'qwen3-max', input: 1.5, output: 6, inputRange: [0, 32000], outputRange: [0, Infinity] },
+        { keyword: 'qwen3-max', input: 2.5, output: 10, inputRange: [32000, 128000], outputRange: [0, Infinity] },
+        { keyword: 'qwen3-max', input: 3.75, output: 15, inputRange: [128000, Infinity], outputRange: [0, Infinity] },
+        { keyword: 'qwen3-next-80b-a3b-instruct', input: 0.25, output: 1 },
+        { keyword: 'qwen3-next-80b-a3b-thinking', input: 0.25, output: 2.5 },
+        { keyword: 'qwen3-coder-480b-a35b-instruct', input: 1.5, output: 6, inputRange: [0, 32000], outputRange: [0, Infinity] },
+        { keyword: 'qwen3-coder-480b-a35b-instruct', input: 2.25, output: 9, inputRange: [32000, 128000], outputRange: [0, Infinity] },
+        { keyword: 'qwen3-coder-480b-a35b-instruct', input: 3.75, output: 15, inputRange: [128000, Infinity], outputRange: [0, Infinity] },
+        { keyword: 'qwen3-vl-30b-a3b-instruct', input: 0.19, output: 0.75 },
+        { keyword: 'qwen3-vl-30b-a3b-thinking', input: 0.19, output: 1.88 },
+        { keyword: 'qwen3-235b-a22b-instruct-2507', input: 0.5, output: 2 },
+        { keyword: 'qwen3-235b-a22b-thinking-2507', input: 0.5, output: 5 },
+        { keyword: 'qwen3-235b-a22b-thinking', input: 0.5, output: 5 },
+        { keyword: 'qwen3-235b-a22b-thinking', input: 0.5, output: 2 },
+        { keyword: 'qwen3-235b-a22b', input: 0.5, output: 2 },
+        { keyword: 'qwen3-32b-thinking', input: 0.5, output: 5 },
+        { keyword: 'qwen3-32b', input: 0.5, output: 2 },
+        { keyword: 'qwen3-30b-a3b-think', input: 0.18, output: 1.87 },
+        { keyword: 'qwen3-30b-a3b-thinking-2507', input: 0.19, output: 1.9 },
+        { keyword: 'qwen3-30b-a3b-instruct-2507', input: 0.19, output: 0.75 },
+        { keyword: 'qwen3-30b-a3b', input: 0.18, output: 0.75 },
+        { keyword: 'qwen2.5-vl-72b-instruct', input: 4, output: 12 },
+        { keyword: 'qwen2.5-vl-7b-instruct', input: 0.5, output: 1.25 },
+        { keyword: 'qwen2.5-omni-7b', input: 0.15, output: 0.6 },
+        { keyword: 'qwen2.5-72b-instruct', input: 1, output: 3 },
+        { keyword: 'qwen2-vl-72b-instruct', input: 4, output: 12 },
+        { keyword: 'qwen2-72b-instruct', input: 1, output: 3 },
+        { keyword: 'qwen-vl-max-latest', input: 0.75, output: 2.25 },
+        { keyword: 'qwen-vl-max-2025-01-25', input: 0.75, output: 2.25 },
+        { keyword: 'qwen-max-2025-01-25', input: 0.6, output: 2.4 },
+        { keyword: 'qwen-turbo', input: 0.08, output: 0.15 },
+        { keyword: 'qwq-plus', input: 0.5, output: 1.5 },
+        { keyword: 'qwq-32b', input: 0.5, output: 1.5 },
+
+        // Kimi 系列
+        { keyword: 'moonshotai/kimi-k2.6', input: 1.63, output: 6.75 },
+        { keyword: 'moonshotai/kimi-k2.5', input: 1, output: 5.25 },
+        { keyword: 'moonshotai/kimi-k2-thinking', input: 1, output: 4 },
+        { keyword: 'moonshotai/kimi-k2-0905', input: 1, output: 4 },
+        { keyword: 'kimi-k2', input: 1, output: 4 },
+
+        // 豆包 / Doubao 系列
+        { keyword: 'doubao-seed-2.0-pro', input: 0.8, output: 4, inputRange: [0, 32000], outputRange: [0, Infinity] },
+        { keyword: 'doubao-seed-2.0-pro', input: 1.2, output: 6, inputRange: [32000, 128000], outputRange: [0, Infinity] },
+        { keyword: 'doubao-seed-2.0-pro', input: 2.4, output: 12, inputRange: [128000, 256000], outputRange: [0, Infinity] },
+        { keyword: 'doubao-seed-2.0-code', input: 0.8, output: 4, inputRange: [0, 32000], outputRange: [0, Infinity] },
+        { keyword: 'doubao-seed-2.0-code', input: 1.2, output: 6, inputRange: [32000, 128000], outputRange: [0, Infinity] },
+        { keyword: 'doubao-seed-2.0-code', input: 2.4, output: 12, inputRange: [128000, 256000], outputRange: [0, Infinity] },
+        { keyword: 'doubao-seed-2.0-lite', input: 0.15, output: 0.9, inputRange: [0, 32000], outputRange: [0, Infinity] },
+        { keyword: 'doubao-seed-2.0-lite', input: 0.23, output: 1.35, inputRange: [32000, 128000], outputRange: [0, Infinity] },
+        { keyword: 'doubao-seed-2.0-lite', input: 0.45, output: 2.7, inputRange: [128000, 256000], outputRange: [0, Infinity] },
+        { keyword: 'doubao-seed-2.0-mini', input: 0.05, output: 0.5, inputRange: [0, 32000], outputRange: [0, Infinity] },
+        { keyword: 'doubao-seed-2.0-mini', input: 0.1, output: 1, inputRange: [32000, 128000], outputRange: [0, Infinity] },
+        { keyword: 'doubao-seed-2.0-mini', input: 0.2, output: 2, inputRange: [128000, 256000], outputRange: [0, Infinity] },
+        { keyword: 'doubao-seed-1.6-thinking', input: 0.2, output: 2, inputRange: [0, 32000], outputRange: [0, Infinity] },
+        { keyword: 'doubao-seed-1.6-thinking', input: 0.3, output: 4, inputRange: [32000, 128000], outputRange: [0, Infinity] },
+        { keyword: 'doubao-seed-1.6-thinking', input: 0.6, output: 6, inputRange: [128000, Infinity], outputRange: [0, Infinity] },
+        { keyword: 'doubao-seed-1.6-flash', input: 0.04, output: 0.38, inputRange: [0, 32000], outputRange: [0, Infinity] },
+        { keyword: 'doubao-seed-1.6-flash', input: 0.08, output: 0.75, inputRange: [32000, 128000], outputRange: [0, Infinity] },
+        { keyword: 'doubao-seed-1.6-flash', input: 0.15, output: 1.5, inputRange: [128000, Infinity], outputRange: [0, Infinity] },
+        { keyword: 'doubao-seed-1.6', input: 0.2, output: 0.5, inputRange: [0, 32000], outputRange: [0, 200] },
+        { keyword: 'doubao-seed-1.6', input: 0.2, output: 2, inputRange: [0, 32000], outputRange: [200, Infinity] },
+        { keyword: 'doubao-seed-1.6', input: 0.3, output: 4, inputRange: [32000, 128000], outputRange: [0, Infinity] },
+        { keyword: 'doubao-seed-1.6', input: 0.6, output: 6, inputRange: [128000, Infinity], outputRange: [0, Infinity] },
+        { keyword: 'doubao-1.5-pro-32k', input: 0.2, output: 0.5 },
+        { keyword: 'doubao-1.5-vision-pro', input: 0.75, output: 2.25 },
+        { keyword: 'doubao-1.5-thinking-pro', input: 1, output: 4 },
+        { keyword: 'doubao', input: 0.2, output: 0.5 },
+
+        // GLM 系列
+        { keyword: 'z-ai/glm-5.1', input: 1.5, output: 6, inputRange: [0, 32000], outputRange: [0, Infinity] },
+        { keyword: 'z-ai/glm-5.1', input: 2, output: 7, inputRange: [32000, Infinity], outputRange: [0, Infinity] },
+        { keyword: 'z-ai/glm-5', input: 1, output: 4.5, inputRange: [0, 32000], outputRange: [0, Infinity] },
+        { keyword: 'z-ai/glm-5', input: 1.5, output: 5.5, inputRange: [32000, Infinity], outputRange: [0, Infinity] },
+        { keyword: 'z-ai/glm-4.7', input: 0.79, output: 3.13 },
+        { keyword: 'z-ai/glm-4.6', input: 1.8, output: 3.15 },
+        { keyword: 'glm-5', input: 1, output: 4.5 },
+        { keyword: 'glm-4.6', input: 1.8, output: 3.15 },
+        { keyword: 'glm-4.5-air', input: 0.5, output: 2 },
+        { keyword: 'glm-4.5', input: 1, output: 4 },
+
+        // Grok 系列
+        { keyword: 'grok-4.1-fast-non-reasoning', input: 0.36, output: 0.9, inputRange: [0, 128000], outputRange: [0, Infinity] },
+        { keyword: 'grok-4.1-fast-non-reasoning', input: 0.72, output: 1.8, inputRange: [128000, Infinity], outputRange: [0, Infinity] },
+        { keyword: 'grok-4.1-fast-reasoning', input: 0.36, output: 0.9, inputRange: [0, 128000], outputRange: [0, Infinity] },
+        { keyword: 'grok-4.1-fast-reasoning', input: 0.72, output: 1.8, inputRange: [128000, Infinity], outputRange: [0, Infinity] },
+        { keyword: 'grok-4.1-fast', input: 0.36, output: 0.9 },
+        { keyword: 'grok-4-fast-non-reasoning', input: 0.36, output: 0.9, inputRange: [0, 128000], outputRange: [0, Infinity] },
+        { keyword: 'grok-4-fast-non-reasoning', input: 0.72, output: 1.8, inputRange: [128000, Infinity], outputRange: [0, Infinity] },
+        { keyword: 'grok-4-fast-reasoning', input: 0.36, output: 0.9, inputRange: [0, 128000], outputRange: [0, Infinity] },
+        { keyword: 'grok-4-fast-reasoning', input: 0.72, output: 1.8, inputRange: [128000, Infinity], outputRange: [0, Infinity] },
+        { keyword: 'grok-4-fast', input: 0.36, output: 0.9, inputRange: [0, 128000], outputRange: [0, Infinity] },
+        { keyword: 'grok-4-fast', input: 0.72, output: 1.8, inputRange: [128000, Infinity], outputRange: [0, Infinity] },
+        { keyword: 'grok-code-fast-1', input: 0.36, output: 2.7 },
+
+        // MiniMax 系列
+        { keyword: 'minimax-m2.7', input: 0.52, output: 2.1 },
+        { keyword: 'minimax-m2.5-highspeed', input: 1.05, output: 4.2 },
+        { keyword: 'minimax-m2.5', input: 0.53, output: 2.1 },
+        { keyword: 'minimax-m2.1', input: 0.53, output: 2.1 },
+        { keyword: 'minimax-m2', input: 0.53, output: 2.1 },
+        { keyword: 'minimax-m1', input: 1, output: 4 },
+
+        // 其他模型
+        { keyword: 'kvl-qwen2.5-vl-7b', input: 0.5, output: 1.25 },
+        { keyword: 'kvl-qwen2.5-vl-3b', input: 0.3, output: 0.9 },
+        { keyword: 'avatar-deepseek-v3', input: 0.5, output: 2 },
+        { keyword: 'stepfun-ai/gelab-zero', input: 0.15, output: 0.3 },
+        { keyword: 'z-ai/autoglm-phone', input: 0.15, output: 0.3 },
+        { keyword: 'xiaomi/mimo-v2-flash', input: 0.18, output: 0.53 },
+    ];
+
+    // 默认系数（未匹配到时使用）
+    const DEFAULT_COEFFICIENT = { input: 1, output: 1 };
+
+    // ============ 工具函数 ============
+    function $(id) { return document.getElementById(id); }
+    function showAlert(msg, type) {
+        const box = $('alert-box');
+        box.textContent = msg;
+        box.className = `alert alert-${type}`;
+        box.style.display = 'block';
+    }
+    function hideAlert() { $('alert-box').style.display = 'none'; }
+    function formatNumber(n) {
+        if (n === undefined || n === null) return '0';
+        return Number(n).toLocaleString('zh-CN', { maximumFractionDigits: 2 });
+    }
+    function formatRFC3339(dateStr, isEnd) {
+        const time = isEnd ? 'T23:59:59+08:00' : 'T00:00:00+08:00';
+        return `${dateStr}${time}`;
+    }
+
+    // ============ 系数匹配逻辑 ============
+    function findCoefficient(modelName) {
+        if (!modelName) return DEFAULT_COEFFICIENT;
+        const lowerName = modelName.toLowerCase().trim();
+
+        // 按 keyword 长度降序匹配，优先匹配更长的关键字
+        const sorted = [...COEFFICIENT_TABLE].sort((a, b) => b.keyword.length - a.keyword.length);
+
+        for (const entry of sorted) {
+            if (lowerName.includes(entry.keyword)) {
+                // 如果没有区间限制，直接返回
+                if (!entry.inputRange && !entry.outputRange) {
+                    return { input: entry.input, output: entry.output };
+                }
+                // 有区间限制的，返回默认区间（第一个匹配的区间）
+                // 实际使用时会取第一个匹配到的
+                return { input: entry.input, output: entry.output };
             }
+        }
+
+        return DEFAULT_COEFFICIENT;
+    }
+
+    // ============ 渲染抵扣系数表 ============
+    function renderCoefficientTable() {
+        const tbody = document.querySelector('#coefficient-table tbody');
+
+        // 去重并排序
+        const seen = new Set();
+        const uniqueEntries = [];
+        COEFFICIENT_TABLE.forEach(entry => {
+            const key = entry.keyword;
+            if (!seen.has(key)) {
+                seen.add(key);
+                uniqueEntries.push(entry);
+            }
+        });
+        uniqueEntries.sort((a, b) => a.keyword.localeCompare(b.keyword));
+
+        tbody.innerHTML = uniqueEntries.map(entry => `
+            <tr class="coef-row" data-keyword="${entry.keyword.toLowerCase()}">
+                <td><strong>${entry.keyword}</strong></td>
+                <td class="text-center"><span class="tag">${entry.input}</span></td>
+                <td class="text-center"><span class="tag">${entry.output}</span></td>
+            </tr>
+        `).join('');
+    }
+
+    function filterCoefficientTable() {
+        const query = ($('coef-search').value || '').toLowerCase().trim();
+        const rows = document.querySelectorAll('.coef-row');
+        let visibleCount = 0;
+        rows.forEach(row => {
+            const kw = row.dataset.keyword || '';
+            if (!query || kw.includes(query)) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        const emptyDiv = $('coef-empty');
+        if (visibleCount === 0) {
+            emptyDiv.classList.remove('hidden');
         } else {
-            const simpleMatch = rawName.match(/^(.+?)(输入|输出|图片输入|图片输出|文本输入|文本输出|音频输入|视频输入|缓存输入|缓存创建|非缓存输入)/);
-            if (simpleMatch) {
-                modelName = simpleMatch[1].replace(/\s*模型\s*(推理)?/g, '').trim();
-                ioType = simpleMatch[2].trim();
-                if (rawName.includes('批量')) tierKey = 'batch';
-                rangeDesc = '-';
-            } else {
-                return;
-            }
+            emptyDiv.classList.add('hidden');
+        }
+    }
+
+    // ============ API 查询用量 ============
+    async function fetchUsage() {
+        hideAlert();
+        $('results-area').classList.add('hidden');
+
+        const apiKey = $('api-key').value.trim();
+        if (!apiKey) {
+            showAlert('请输入 API Key', 'error');
+            return;
         }
 
-        modelName = modelName.replace(/\s*-\s*中国大陆$/, '').trim();
-
-        if (!coeffMap[modelName]) coeffMap[modelName] = {};
-        if (!coeffMap[modelName][tierKey]) coeffMap[modelName][tierKey] = { input: null, output: null };
-        if (ioType.includes('输入') && !ioType.includes('输出')) {
-            coeffMap[modelName][tierKey].input = coeff;
-        } else if (ioType.includes('输出') || ioType.includes('图片输出') || ioType.includes('文本输出')) {
-            coeffMap[modelName][tierKey].output = coeff;
+        const granularity = $('granularity').value;
+        const startDate = $('start-date').value;
+        const endDate = $('end-date').value;
+        if (!startDate || !endDate) {
+            showAlert('请选择开始和结束日期', 'error');
+            return;
         }
 
-        allRefEntries.push({ model: modelName, ioType, range: rangeDesc === tierKey && tierKey !== 'standard' ? rangeDesc : (rangeDesc || '-'), period, coeff, tierKey });
-    });
+        const btn = $('btn-query');
+        btn.disabled = true;
+        btn.textContent = '查询中...';
 
-    Object.keys(coeffMap).forEach(model => {
-        Object.keys(coeffMap[model]).forEach(tier => {
-            const entry = coeffMap[model][tier];
-            if (entry.input === null) entry.input = 0;
-            if (entry.output === null) entry.output = 0;
-        });
-    });
-
-    function getDefaultTier(modelName) {
-        const tiers = coeffMap[modelName];
-        if (!tiers) return 'standard';
-        const keys = Object.keys(tiers);
-        if (keys.includes('standard')) return 'standard';
-        if (keys.includes('0-200000')) return '0-200000';
-        if (keys.includes('batch')) return 'batch';
-        return keys[0] || 'standard';
-    }
-
-    function computeBilled(rawIn, rawOut, modelName, tierKey) {
-        const modelTiers = coeffMap[modelName];
-        if (!modelTiers) return { billed: rawIn + rawOut, inCoeff: 1, outCoeff: 1 };
-        const tier = modelTiers[tierKey] || modelTiers[getDefaultTier(modelName)] || { input: 1, output: 1 };
-        const billed = rawIn * tier.input + rawOut * tier.output;
-        return { billed: Math.round(billed * 100) / 100, inCoeff: tier.input, outCoeff: tier.output };
-    }
-
-    function getModelTierOptions(modelName) {
-        const tiers = coeffMap[modelName];
-        if (!tiers) return [];
-        return Object.keys(tiers).map(tier => {
-            const t = tiers[tier];
-            let label = tier;
-            if (tier === 'standard') label = '标准';
-            else if (tier === 'batch') label = '批量';
-            return { tier, label, inCoeff: t.input, outCoeff: t.output };
-        });
-    }
-
-    // ─────────── API 与渲染 ───────────
-    const API_URL = (key, gran, start, end) => {
-        const s = new Date(start + 'T00:00:00+08:00').toISOString().replace(/\.\d{3}Z$/, '+08:00');
-        const e = new Date(end + 'T23:59:59+08:00').toISOString().replace(/\.\d{3}Z$/, '+08:00');
-        return `${API_BASE}${USAGE_EP}?granularity=${gran}&start=${encodeURIComponent(s)}&end=${encodeURIComponent(e)}`;
-    };
-
-    let rawChart = null, billedChart = null, selectedTiers = {}, currentDailyData = [], currentModelUsage = {};
-
-    async function fetchData() {
-        const key = document.getElementById('apiKeyInput').value.trim();
-        if (!key) { alert('请输入API Key'); return; }
-        const gran = document.getElementById('granularitySelect').value;
-        const start = document.getElementById('startDateInput').value;
-        const end = document.getElementById('endDateInput').value;
         try {
-            const resp = await fetch(API_URL(key, gran, start, end), { headers: { Authorization: `Bearer ${key}` } });
-            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-            const json = await resp.json();
-            if (!json.status || !json.data) throw new Error(json.error || '数据异常');
-            parseAndRender(json.data);
-        } catch (e) {
-            console.error(e);
-            document.getElementById('corsNote').classList.add('show');
-            alert('查询失败：' + e.message);
+            const startRFC = formatRFC3339(startDate, false);
+            const endRFC = formatRFC3339(endDate, true);
+            const url = `https://api.qnaigc.com/v2/stat/usage?granularity=${granularity}&start=${encodeURIComponent(startRFC)}&end=${encodeURIComponent(endRFC)}`;
+
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${apiKey}` }
+            });
+
+            if (!response.ok) {
+                if (response.status === 400) throw new Error('请求参数错误(400)。请检查日期范围是否正确。');
+                if (response.status === 401) throw new Error('认证失败(401)。请检查 API Key 是否正确。');
+                if (response.status === 403) throw new Error('权限不足(403)。该 Key 可能没有用量查询权限。');
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const json = await response.json();
+            if (!json.status) throw new Error(json.error || '接口返回错误状态');
+            renderResults(json.data);
+        } catch (err) {
+            showAlert(`请求失败: ${err.message}`, 'error');
+            console.error('完整错误:', err);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '🔍 查询用量';
         }
     }
 
-    function parseAndRender(apiData) {
-        const dailyMap = {}, modelUsage = {};
-        apiData.forEach(entry => {
-            const modelId = entry.id, modelName = entry.name || modelId;
-            if (!modelUsage[modelId]) modelUsage[modelId] = { rawIn: 0, rawOut: 0, displayName: modelName };
-            (entry.items || []).forEach(item => {
-                const isInput = item.name.includes('输入');
-                const isOutput = item.name.includes('输出');
-                (item.categories || []).forEach(cat => {
-                    (cat.values || []).forEach(val => {
-                        const date = val.time ? val.time.split('T')[0] : 'unknown';
-                        if (!dailyMap[date]) dailyMap[date] = {};
-                        if (!dailyMap[date][modelId]) dailyMap[date][modelId] = { rawIn: 0, rawOut: 0 };
-                        if (isInput) { dailyMap[date][modelId].rawIn += val.value;
-                            modelUsage[modelId].rawIn += val.value; } else if (isOutput) { dailyMap[date][modelId]
-                                .rawOut += val.value;
-                            modelUsage[modelId].rawOut += val.value; }
+    function renderResults(data) {
+        $('results-area').classList.remove('hidden');
+
+        let totalInput = 0, totalOutput = 0, totalBilling = 0;
+        const modelDetails = [];
+        const timeSeries = {};
+
+        if (Array.isArray(data)) {
+            data.forEach(model => {
+                const modelName = model.name || model.id || '未知模型';
+                let mInput = 0, mOutput = 0;
+
+                if (model.items && Array.isArray(model.items)) {
+                    model.items.forEach(item => {
+                        const name = item.name || '';
+                        if (name.includes('输入')) mInput += item.total || 0;
+                        if (name.includes('输出')) mOutput += item.total || 0;
                     });
-                });
+                }
+
+                totalInput += mInput;
+                totalOutput += mOutput;
+
+                const coef = findCoefficient(modelName);
+                const billingTokens = (mInput * coef.input) + (mOutput * coef.output);
+                totalBilling += billingTokens;
+
+                if (mInput > 0 || mOutput > 0) {
+                    modelDetails.push({
+                        name: modelName,
+                        input: mInput,
+                        output: mOutput,
+                        total: mInput + mOutput,
+                        inputCoef: coef.input,
+                        outputCoef: coef.output,
+                        billingTokens
+                    });
+                }
+
+                // 时间序列
+                if (model.items) {
+                    model.items.forEach(item => {
+                        const isInput = (item.name || '').includes('输入');
+                        const factor = isInput ? coef.input : coef.output;
+                        if (item.categories) {
+                            item.categories.forEach(cat => {
+                                if (cat.values) {
+                                    cat.values.forEach(v => {
+                                        const t = v.time ? v.time.split('T')[0] : '';
+                                        if (t) {
+                                            if (!timeSeries[t]) timeSeries[t] = { raw: 0, billing: 0 };
+                                            timeSeries[t].raw += (v.value || 0);
+                                            timeSeries[t].billing += (v.value || 0) * factor;
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
             });
-        });
-        const dailyData = Object.keys(dailyMap).sort().map(date => {
-            const models = dailyMap[date];
-            let totalIn = 0, totalOut = 0;
-            Object.values(models).forEach(v => { totalIn += v.rawIn;
-                totalOut += v.rawOut; });
-            return { date, models, totalRawIn: totalIn, totalRawOut: totalOut };
-        });
-        currentDailyData = dailyData;
-        currentModelUsage = modelUsage;
-        renderCharts();
-        renderModelTable();
-        updateSummary();
+        }
+
+        const allTotal = totalInput + totalOutput;
+
+        // 概览卡片
+        $('summary-cards').innerHTML = `
+            <div class="stat-card">
+                <div class="stat-value">${formatNumber(allTotal)}</div>
+                <div class="stat-label">原始总 Token (K)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">${formatNumber(totalInput)}</div>
+                <div class="stat-label">原始输入 (K)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">${formatNumber(totalOutput)}</div>
+                <div class="stat-label">原始输出 (K)</div>
+            </div>
+            <div class="stat-card highlight">
+                <div class="stat-value">${formatNumber(totalBilling)}</div>
+                <div class="stat-label">最终消耗 (计费Token K)</div>
+            </div>
+        `;
+
+        // 模型明细表
+        const tbody = document.querySelector('#model-table tbody');
+        if (modelDetails.length > 0) {
+            modelDetails.sort((a, b) => b.billingTokens - a.billingTokens);
+            tbody.innerHTML = modelDetails.map(m => `
+                <tr>
+                    <td><strong>${m.name}</strong></td>
+                    <td class="text-right">${formatNumber(m.input)}</td>
+                    <td class="text-right">${formatNumber(m.output)}</td>
+                    <td class="text-right">${formatNumber(m.total)}</td>
+                    <td class="text-center">×${m.inputCoef}</td>
+                    <td class="text-center">×${m.outputCoef}</td>
+                    <td class="text-right highlight-cell">${formatNumber(m.billingTokens)}</td>
+                </tr>
+            `).join('');
+            tbody.innerHTML += `
+                <tr style="font-weight:700; border-top:2px solid var(--border);">
+                    <td>📊 合计</td>
+                    <td class="text-right">${formatNumber(totalInput)}</td>
+                    <td class="text-right">${formatNumber(totalOutput)}</td>
+                    <td class="text-right">${formatNumber(allTotal)}</td>
+                    <td class="text-center">-</td>
+                    <td class="text-center">-</td>
+                    <td class="text-right highlight-cell">${formatNumber(totalBilling)}</td>
+                </tr>
+            `;
+        } else {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center" style="padding:24px;color:var(--text-secondary);">该时间段内没有用量数据</td></tr>';
+        }
+
+        // 趋势图
+        drawChart('chart-raw', timeSeries, 'raw', '原始 Token', '#2563eb');
+        drawChart('chart-billing', timeSeries, 'billing', '计费 Token', '#ef4444');
+
+        window.scrollTo({ top: $('results-area').offsetTop - 20, behavior: 'smooth' });
     }
 
-    function renderCharts() {
-        const ctx1 = document.getElementById('rawTokenChart').getContext('2d');
-        if (rawChart) rawChart.destroy();
-        rawChart = new Chart(ctx1, { type: 'bar', data: { labels: currentDailyData.map(d => d.date), datasets: [
-                    { label: '原始输入 (K)', data: currentDailyData.map(d => d.totalRawIn), backgroundColor: '#5b8def' },
-                    { label: '原始输出 (K)', data: currentDailyData.map(d => d.totalRawOut), backgroundColor: '#34d399' }
-                ] }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }, plugins: { tooltip: { mode: 'index' } } } });
+    function drawChart(canvasId, timeSeries, key, label, color) {
+        const dates = Object.keys(timeSeries).sort();
+        const ctx = $(canvasId).getContext('2d');
 
-        const ctx2 = document.getElementById('billedTokenChart').getContext('2d');
-        if (billedChart) billedChart.destroy();
-        const billedData = currentDailyData.map(d => {
-            let sum = 0;
-            Object.keys(d.models).forEach(mid => {
-                const tier = selectedTiers[mid] || getDefaultTier(mid);
-                sum += computeBilled(d.models[mid].rawIn, d.models[mid].rawOut, mid, tier).billed;
-            });
-            return sum;
-        });
-        billedChart = new Chart(ctx2, { type: 'bar', data: { labels: currentDailyData.map(d => d.date), datasets: [{ label: '计费 Token (K)', data: billedData, backgroundColor: '#f59e0b' }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } } });
-    }
+        const oldChart = Chart.getChart(canvasId);
+        if (oldChart) oldChart.destroy();
 
-    function renderModelTable() {
-        const tbody = document.getElementById('modelDetailTbody');
-        tbody.innerHTML = '';
-        const ids = Object.keys(currentModelUsage);
-        if (!ids.length) { tbody.innerHTML = '<tr><td colspan="8">暂无数据</td></tr>'; return; }
-        let totalBilled = 0;
-        ids.forEach(id => {
-            const u = currentModelUsage[id];
-            const rawTotal = u.rawIn + u.rawOut;
-            const defTier = getDefaultTier(id);
-            selectedTiers[id] = defTier;
-            const res = computeBilled(u.rawIn, u.rawOut, id, defTier);
-            totalBilled += res.billed;
-            const options = getModelTierOptions(id);
-            const multi = options.length > 1;
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${u.displayName}${multi ? ' <span class="badge multi">多区间</span>' : ''}</td>
-                <td>${u.rawIn.toFixed(2)}</td><td>${u.rawOut.toFixed(2)}</td><td>${rawTotal.toFixed(2)}</td>
-                <td class="inCoeff">${res.inCoeff}</td><td class="outCoeff">${res.outCoeff}</td><td class="billed">${res.billed.toFixed(2)}</td>
-                <td>${multi ? `<select class="coeff-select" data-id="${id}">${options.map(o => `<option value="${o.tier}" ${o.tier===defTier?'selected':''}>${o.label} (${o.inCoeff}/${o.outCoeff})</option>`).join('')}</select>` : '标准'}</td>`;
-            tbody.appendChild(tr);
-        });
-        const totalTr = document.createElement('tr');
-        totalTr.className = 'row-total';
-        totalTr.innerHTML = `<td>合计</td><td>${ids.reduce((s,id)=>s+currentModelUsage[id].rawIn,0).toFixed(2)}</td><td>${ids.reduce((s,id)=>s+currentModelUsage[id].rawOut,0).toFixed(2)}</td><td>${(ids.reduce((s,id)=>s+currentModelUsage[id].rawIn+currentModelUsage[id].rawOut,0)).toFixed(2)}</td><td>-</td><td>-</td><td id="gtBilled">${totalBilled.toFixed(2)}</td><td></td>`;
-        tbody.appendChild(totalTr);
-        tbody.querySelectorAll('.coeff-select').forEach(s => s.addEventListener('change', function() {
-            const id = this.dataset.id;
-            selectedTiers[id] = this.value;
-            const row = this.closest('tr');
-            const u = currentModelUsage[id];
-            const r = computeBilled(u.rawIn, u.rawOut, id, this.value);
-            row.querySelector('.inCoeff').textContent = r.inCoeff;
-            row.querySelector('.outCoeff').textContent = r.outCoeff;
-            row.querySelector('.billed').textContent = r.billed.toFixed(2);
-            let gt = 0;
-            document.querySelectorAll('#modelDetailTbody tr:not(.row-total) .billed').forEach(c => gt += parseFloat(c.textContent));
-            document.getElementById('gtBilled').textContent = gt.toFixed(2);
-            renderCharts();
-            updateSummary();
-        }));
-    }
+        const values = dates.map(d => timeSeries[d][key] || 0);
 
-    function updateSummary() {
-        let ti = 0, to = 0, tb = 0;
-        Object.keys(currentModelUsage).forEach(id => {
-            const u = currentModelUsage[id];
-            ti += u.rawIn; to += u.rawOut;
-            tb += computeBilled(u.rawIn, u.rawOut, id, selectedTiers[id] || getDefaultTier(id)).billed;
-        });
-        document.getElementById('sumRawTotal').textContent = (ti + to).toFixed(2);
-        document.getElementById('sumRawOut').textContent = to.toFixed(2);
-        document.getElementById('sumRawIn').textContent = ti.toFixed(2);
-        document.getElementById('sumBilled').textContent = tb.toFixed(2);
-    }
-
-    function renderRefTable(filter = '') {
-        const tbody = document.getElementById('coeffRefTbody');
-        const noRes = document.getElementById('coeffNoResult');
-        tbody.innerHTML = '';
-        const f = filter.trim().toLowerCase();
-        const filtered = f ? allRefEntries.filter(e => e.model.toLowerCase().includes(f) || e.ioType.includes(f)) : allRefEntries;
-        if (!filtered.length) { noRes.style.display = 'block'; return; }
-        noRes.style.display = 'none';
-        filtered.forEach(e => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${e.model}</td><td>${e.ioType}</td><td>${e.range}</td><td>${e.period}</td><td>${e.coeff}</td>`;
-            tbody.appendChild(tr);
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: dates.length > 0 ? dates : ['暂无数据'],
+                datasets: [{
+                    label: label,
+                    data: values.length > 0 ? values : [0],
+                    backgroundColor: color,
+                    borderRadius: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Token (千)' }
+                    }
+                }
+            }
         });
     }
 
-    document.getElementById('queryBtn').onclick = fetchData;
-    document.getElementById('resetBtn').onclick = () => {
-        ['apiKeyInput','startDateInput','endDateInput'].forEach(id => {
-            const el = document.getElementById(id);
-            if (id==='apiKeyInput') el.value='';
-            else if (id==='startDateInput') el.value='2026-04-30';
-            else el.value='2026-05-12';
-        });
-        document.getElementById('corsNote').classList.remove('show');
-        if (rawChart) rawChart.destroy();
-        if (billedChart) billedChart.destroy();
-        document.getElementById('modelDetailTbody').innerHTML = '<tr><td colspan="8">暂无数据</td></tr>';
-        ['sumRawTotal','sumRawOut','sumRawIn','sumBilled'].forEach(id => document.getElementById(id).textContent='--');
-        currentDailyData=[]; currentModelUsage={};
-    };
-    document.getElementById('coeffSearchInput').oninput = function() { renderRefTable(this.value); };
+    // ============ 初始化 ============
+    document.addEventListener('DOMContentLoaded', () => {
+        const today = new Date();
+        const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+        $('end-date').valueAsDate = today;
+        $('start-date').valueAsDate = lastWeek;
 
-    renderRefTable();
-    console.log('工具就绪，内置系数项：', allRefEntries.length);
-})();
+        renderCoefficientTable();
+    });
 </script>
 </body>
 </html>

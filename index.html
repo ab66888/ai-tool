@@ -17,14 +17,12 @@
             --accent-green: #10b981;
             --accent-orange: #f59e0b;
             --input-bg: #f9fafb;
-            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
             --radius: 10px;
             --radius-sm: 6px;
-            --font-mono: 'SF Mono','Cascadia Code','Consolas','Monaco',monospace;
-            --font-sans: 'Inter','Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: var(--font-sans); background: var(--bg); color: var(--text); padding: 16px; }
+        body { font-family: 'Segoe UI', 'PingFang SC', sans-serif; background: var(--bg); color: var(--text); padding: 16px; }
         .container { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
         .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; box-shadow: var(--shadow-sm); }
         .card-header { font-size: 15px; font-weight: 600; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
@@ -33,17 +31,18 @@
         .icon-dot.orange { background: var(--accent-orange); }
         .config-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
         .config-item { display: flex; flex-direction: column; gap: 4px; min-width: 120px; }
-        .config-item label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; }
-        .config-item input, .config-item select { height: 36px; padding: 0 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--input-bg); outline: none; }
-        .config-item input:focus, .config-item select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,111,245,0.08); }
-        .btn { height: 36px; padding: 0 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid transparent; }
+        .config-item label { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+        .config-item input,
+        .config-item select { height: 36px; padding: 0 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--input-bg); outline: none; }
+        .config-item input:focus,
+        .config-item select:focus { border-color: var(--primary); }
+        .btn { height: 36px; padding: 0 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; cursor: pointer; border: none; }
         .btn-primary { background: var(--primary); color: #fff; }
-        .btn-primary:hover { background: #2b5de0; }
-        .btn-outline { background: #fff; color: var(--text-secondary); border-color: var(--border); }
+        .btn-outline { background: #fff; color: var(--text-secondary); border: 1px solid var(--border); }
         .summary-row { display: flex; flex-wrap: wrap; gap: 16px; }
         .summary-item { flex: 1; min-width: 120px; background: var(--input-bg); border-radius: var(--radius-sm); padding: 14px 12px; border: 1px solid var(--border); }
         .summary-item .label { font-size: 11px; font-weight: 600; color: var(--text-secondary); }
-        .summary-item .value { font-size: 20px; font-weight: 700; font-family: var(--font-mono); }
+        .summary-item .value { font-size: 20px; font-weight: 700; }
         .chart-wrap { height: 320px; margin-top: 8px; }
         .chart-wrap.short { height: 280px; }
         .table-wrap { overflow-x: auto; }
@@ -51,8 +50,8 @@
         table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 700px; }
         table thead th { background: #f8f9fb; font-weight: 600; color: var(--text-secondary); font-size: 11px; padding: 10px; text-align: right; border-bottom: 2px solid var(--border); white-space: nowrap; }
         table thead th:first-child { text-align: left; }
-        table tbody td { padding: 9px 10px; border-bottom: 1px solid #f0f1f4; text-align: right; font-family: var(--font-mono); font-size: 12px; white-space: nowrap; }
-        table tbody td:first-child { text-align: left; font-family: var(--font-sans); font-weight: 500; }
+        table tbody td { padding: 9px 10px; border-bottom: 1px solid #f0f1f4; text-align: right; font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace; font-size: 12px; white-space: nowrap; }
+        table tbody td:first-child { text-align: left; font-family: 'Segoe UI', 'PingFang SC', sans-serif; font-weight: 500; font-size: 12px; }
         table tbody tr:hover { background: #fafbfc; }
         .row-total { font-weight: 700; background: #f8f9fb; border-top: 2px solid var(--border); }
         .coeff-select { font-size: 11px; padding: 3px 6px; border-radius: 4px; border: 1px solid var(--border); background: #fff; cursor: pointer; max-width: 200px; outline: none; }
@@ -62,27 +61,31 @@
         .search-wrap input { width: 100%; height: 36px; padding: 0 12px 0 34px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--input-bg); }
         .search-wrap .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #a0a7b3; }
         .no-result { text-align: center; padding: 24px; color: var(--text-secondary); }
-        .cors-note { font-size: 11px; color: #ef4444; margin-top: 8px; padding: 8px 12px; background: #fef2f2; border-radius: var(--radius-sm); border: 1px solid #fecaca; display: none; }
-        @media (max-width: 768px) { .config-row { flex-direction: column; } .summary-row { flex-direction: column; } .chart-wrap { height: 240px; } }
+        .cors-note { font-size: 11px; color: #ef4444; margin-top: 8px; padding: 8px 12px; background: #fef2f2; border-radius: var(--radius-sm); display: none; }
+        .loading-msg { text-align: center; padding: 10px; color: var(--primary); }
+        @media (max-width: 768px) {
+            .config-row { flex-direction: column; }
+            .summary-row { flex-direction: column; }
+            .chart-wrap { height: 240px; }
+        }
     </style>
 </head>
 <body>
 <div class="container">
-    <!-- API 配置卡片 -->
-    <div class="card" id="configCard">
+    <div class="card">
         <div class="card-header"><span class="icon-dot"></span>API 配置</div>
         <div class="config-row">
             <div class="config-item" style="flex:2"><label>API KEY</label><input type="text" id="apiKeyInput" placeholder="请输入 API Key (sk-...)" value=""></div>
-            <div class="config-item"><label>时间粒度</label><select id="granularitySelect"><option value="day" selected>按天</option><option value="hour">按小时</option></select></div>
+            <div class="config-item"><label>时间粒度</label><select id="granularitySelect"><option value="day" selected>按天</option></select></div>
             <div class="config-item"><label>开始日期</label><input type="date" id="startDateInput" value="2026-04-30"></div>
             <div class="config-item"><label>结束日期</label><input type="date" id="endDateInput" value="2026-05-12"></div>
             <div class="config-item"><label>&nbsp;</label><div style="display:flex;gap:8px;"><button class="btn btn-primary" id="queryBtn">查询周期</button><button class="btn btn-outline" id="resetBtn">重置</button></div></div>
         </div>
         <div class="cors-note" id="corsNote">⚠ CORS 错误：请安装 Moesif CORS 浏览器插件。Key 仅保存在本地浏览器。</div>
+        <div class="loading-msg" id="loadingMsg" style="display:none;">正在拉取所有分页数据，请稍候...</div>
     </div>
 
-    <!-- 独立汇总卡片（新增原始总 Token） -->
-    <div class="card" id="summaryCard">
+    <div class="card">
         <div class="summary-row" id="summaryRow">
             <div class="summary-item"><div class="label">原始总 Token (K)</div><div class="value small" id="sumRawTotal">--</div></div>
             <div class="summary-item"><div class="label">原始输出 (K)</div><div class="value small" id="sumRawOut">--</div></div>
@@ -91,19 +94,14 @@
         </div>
     </div>
 
-    <!-- 用量趋势（原始 Token） -->
     <div class="card"><div class="card-header"><span class="icon-dot green"></span>用量趋势（原始 Token）</div><div class="chart-wrap"><canvas id="rawTokenChart"></canvas></div></div>
-
-    <!-- 最终消耗趋势（计费 Token） -->
     <div class="card"><div class="card-header"><span class="icon-dot orange"></span>最终消耗趋势（计费 Token）</div><div class="chart-wrap short"><canvas id="billedTokenChart"></canvas></div></div>
 
-    <!-- 按模型明细 -->
     <div class="card">
         <div class="card-header"><span class="icon-dot"></span>按模型明细</div>
         <div class="table-wrap"><table id="modelDetailTable"><thead><tr><th>模型名称</th><th>原始输入 (K)</th><th>原始输出 (K)</th><th>原始总计 (K)</th><th>输入系数</th><th>输出系数</th><th>最终消耗 (K)</th><th>抵扣区间选择</th></tr></thead><tbody id="modelDetailTbody"></tbody></table></div>
     </div>
 
-    <!-- 模型抵扣系数参考表 -->
     <div class="card">
         <div class="card-header"><span class="icon-dot"></span>模型抵扣系数参考表</div>
         <p style="font-size:11px;color:var(--text-secondary);margin-bottom:8px;">公式：最终消耗 = 原始输入 Token × 输入系数 + 原始输出 Token × 输出系数。系数不可编辑。</p>
@@ -625,10 +623,9 @@ openai/gpt-5.5输出(输入区间：272000-无限 输出区间：0-无限)-中�
 openai/gpt-5.5输入(输入区间：0-272000 输出区间：0-无限)-中国大陆	全时段	18
 openai/gpt-5.5输出(输入区间：0-272000 输出区间：0-无限)-中国大陆	全时段	81`;
 
-    // ─────────── 解析构建 ───────────
+    // ─────────── 解析系数映射 ───────────
     const coeffMap = {};
     const allRefEntries = [];
-
     const lines = RAW_COEFF_TEXT.split('\n').filter(l => l.trim() !== '');
     lines.forEach(line => {
         const parts = line.split('\t');
@@ -637,12 +634,10 @@ openai/gpt-5.5输出(输入区间：0-272000 输出区间：0-无限)-中国大�
         const period = parts[1]?.trim() || '全时段';
         const coeff = parseFloat(parts[2]);
         if (isNaN(coeff)) return;
-
         let modelName = '';
         let ioType = '';
         let tierKey = 'standard';
         let rangeDesc = '-';
-
         const bracketMatch = rawName.match(/^(.+?)(输入|输出|图片输入|图片输出|文本输入|文本输出|音频输入|视频输入|缓存输入|缓存创建|非缓存输入)(.*)$/);
         if (bracketMatch) {
             modelName = bracketMatch[1].replace(/\s*模型\s*(推理)?/g, '').trim();
@@ -666,24 +661,15 @@ openai/gpt-5.5输出(输入区间：0-272000 输出区间：0-无限)-中国大�
                 ioType = simpleMatch[2].trim();
                 if (rawName.includes('批量')) tierKey = 'batch';
                 rangeDesc = '-';
-            } else {
-                return;
-            }
+            } else return;
         }
-
         modelName = modelName.replace(/\s*-\s*中国大陆$/, '').trim();
-
         if (!coeffMap[modelName]) coeffMap[modelName] = {};
         if (!coeffMap[modelName][tierKey]) coeffMap[modelName][tierKey] = { input: null, output: null };
-        if (ioType.includes('输入') && !ioType.includes('输出')) {
-            coeffMap[modelName][tierKey].input = coeff;
-        } else if (ioType.includes('输出') || ioType.includes('图片输出') || ioType.includes('文本输出')) {
-            coeffMap[modelName][tierKey].output = coeff;
-        }
-
+        if (ioType.includes('输入') && !ioType.includes('输出')) coeffMap[modelName][tierKey].input = coeff;
+        else if (ioType.includes('输出') || ioType.includes('图片输出') || ioType.includes('文本输出')) coeffMap[modelName][tierKey].output = coeff;
         allRefEntries.push({ model: modelName, ioType, range: rangeDesc === tierKey && tierKey !== 'standard' ? rangeDesc : (rangeDesc || '-'), period, coeff, tierKey });
     });
-
     Object.keys(coeffMap).forEach(model => {
         Object.keys(coeffMap[model]).forEach(tier => {
             const entry = coeffMap[model][tier];
@@ -701,35 +687,69 @@ openai/gpt-5.5输出(输入区间：0-272000 输出区间：0-无限)-中国大�
         if (keys.includes('batch')) return 'batch';
         return keys[0] || 'standard';
     }
-
-    function computeBilled(rawIn, rawOut, modelName, tierKey) {
+    function computeBilled(rawInK, rawOutK, modelName, tierKey) {
         const modelTiers = coeffMap[modelName];
-        if (!modelTiers) return { billed: rawIn + rawOut, inCoeff: 1, outCoeff: 1 };
+        if (!modelTiers) return { billed: rawInK + rawOutK, inCoeff: 1, outCoeff: 1 };
         const tier = modelTiers[tierKey] || modelTiers[getDefaultTier(modelName)] || { input: 1, output: 1 };
-        const billed = rawIn * tier.input + rawOut * tier.output;
+        const billed = rawInK * tier.input + rawOutK * tier.output;
         return { billed: Math.round(billed * 100) / 100, inCoeff: tier.input, outCoeff: tier.output };
     }
-
     function getModelTierOptions(modelName) {
         const tiers = coeffMap[modelName];
         if (!tiers) return [];
         return Object.keys(tiers).map(tier => {
             const t = tiers[tier];
-            let label = tier;
-            if (tier === 'standard') label = '标准';
-            else if (tier === 'batch') label = '批量';
+            let label = tier === 'standard' ? '标准' : (tier === 'batch' ? '批量' : tier);
             return { tier, label, inCoeff: t.input, outCoeff: t.output };
         });
     }
 
-    // ─────────── API 与渲染 ───────────
-    const API_URL = (key, gran, start, end) => {
-        const s = new Date(start + 'T00:00:00+08:00').toISOString().replace(/\.\d{3}Z$/, '+08:00');
-        const e = new Date(end + 'T23:59:59+08:00').toISOString().replace(/\.\d{3}Z$/, '+08:00');
-        return `${API_BASE}${USAGE_EP}?granularity=${gran}&start=${encodeURIComponent(s)}&end=${encodeURIComponent(e)}`;
-    };
+    // ─────────── 增强获取 API 数据（兼容多种结构+分页）───────────
+    async function fetchUsageData(apiKey, granularity, startDate, endDate) {
+        const s = new Date(startDate + 'T00:00:00Z').toISOString();
+        const e = new Date(endDate + 'T23:59:59Z').toISOString();
+        const params = new URLSearchParams({ granularity, start: s, end: e });
+        const url = `${API_BASE}${USAGE_EP}?${params.toString()}`;
+        const response = await fetch(url, { headers: { Authorization: `Bearer ${apiKey}` } });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const json = await response.json();
+        let data = [];
+        if (Array.isArray(json)) data = json;
+        else if (json.data && Array.isArray(json.data)) data = json.data;
+        else if (json.result && Array.isArray(json.result)) data = json.result;
+        else if (json.records && Array.isArray(json.records)) data = json.records;
+        else if (json.items && Array.isArray(json.items)) data = json.items;
+        else if (json.data && typeof json.data === 'object') data = json.data.items || json.data.records || [];
+        let allData = [...data];
+        let cursor = json.next_cursor || json.next || null;
+        let hasMore = json.has_more || false;
+        if (!hasMore && cursor) hasMore = true;
+        while (hasMore && cursor) {
+            const nextParams = new URLSearchParams({ granularity, start: s, end: e, cursor });
+            const nextUrl = `${API_BASE}${USAGE_EP}?${nextParams.toString()}`;
+            const nextResp = await fetch(nextUrl, { headers: { Authorization: `Bearer ${apiKey}` } });
+            if (!nextResp.ok) break;
+            const nextJson = await nextResp.json();
+            const nextData = nextJson.data || nextJson.result || nextJson.records || nextJson.items || [];
+            allData = allData.concat(Array.isArray(nextData) ? nextData : []);
+            cursor = nextJson.next_cursor || nextJson.next || null;
+            hasMore = nextJson.has_more || false;
+            if (!hasMore && cursor) hasMore = true;
+        }
+        return allData;
+    }
 
+    // ─────────── 渲染逻辑 ───────────
     let rawChart = null, billedChart = null, selectedTiers = {}, currentDailyData = [], currentModelUsage = {};
+
+    function classifyToken(name) {
+        const n = (name || '').toLowerCase();
+        if (n.includes('创建') || n.includes('creation')) return null;
+        if (n.includes('输入') || n.includes('input') || n.includes('prompt')) return 'input';
+        if (n.includes('输出') || n.includes('output') || n.includes('completion')) return 'output';
+        if (n.includes('token')) return 'unknown';
+        return null;
+    }
 
     async function fetchData() {
         const key = document.getElementById('apiKeyInput').value.trim();
@@ -737,36 +757,58 @@ openai/gpt-5.5输出(输入区间：0-272000 输出区间：0-无限)-中国大�
         const gran = document.getElementById('granularitySelect').value;
         const start = document.getElementById('startDateInput').value;
         const end = document.getElementById('endDateInput').value;
+        document.getElementById('loadingMsg').style.display = 'block';
+        document.getElementById('corsNote').classList.remove('show');
         try {
-            const resp = await fetch(API_URL(key, gran, start, end), { headers: { Authorization: `Bearer ${key}` } });
-            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-            const json = await resp.json();
-            if (!json.status || !json.data) throw new Error(json.error || '数据异常');
-            parseAndRender(json.data);
+            const allData = await fetchUsageData(key, gran, start, end);
+            parseAndRender(allData);
         } catch (e) {
             console.error(e);
             document.getElementById('corsNote').classList.add('show');
             alert('查询失败：' + e.message);
+        } finally {
+            document.getElementById('loadingMsg').style.display = 'none';
         }
     }
 
     function parseAndRender(apiData) {
         const dailyMap = {}, modelUsage = {};
         apiData.forEach(entry => {
-            const modelId = entry.id, modelName = entry.name || modelId;
+            const modelId = entry.id || entry.model_id || entry.name;
+            const modelName = entry.name || modelId;
+            if (!modelId) return;
             if (!modelUsage[modelId]) modelUsage[modelId] = { rawIn: 0, rawOut: 0, displayName: modelName };
+            if (entry.values && Array.isArray(entry.values)) {
+                entry.values.forEach(val => {
+                    const numVal = Number(val.value || val);
+                    if (isNaN(numVal)) return;
+                    modelUsage[modelId].rawIn += numVal / 2;
+                    modelUsage[modelId].rawOut += numVal / 2;
+                });
+            }
             (entry.items || []).forEach(item => {
-                const isInput = item.name.includes('输入');
-                const isOutput = item.name.includes('输出');
-                (item.categories || []).forEach(cat => {
+                const type = classifyToken(item.name);
+                if (!type) return;
+                const categories = item.categories || (item.values ? [{ values: item.values }] : []);
+                categories.forEach(cat => {
                     (cat.values || []).forEach(val => {
-                        const date = val.time ? val.time.split('T')[0] : 'unknown';
-                        if (!dailyMap[date]) dailyMap[date] = {};
-                        if (!dailyMap[date][modelId]) dailyMap[date][modelId] = { rawIn: 0, rawOut: 0 };
-                        if (isInput) { dailyMap[date][modelId].rawIn += val.value;
-                            modelUsage[modelId].rawIn += val.value; } else if (isOutput) { dailyMap[date][modelId]
-                                .rawOut += val.value;
-                            modelUsage[modelId].rawOut += val.value; }
+                        const numVal = Number(val.value || val);
+                        if (isNaN(numVal)) return;
+                        const dateStr = (val.time || '').split('T')[0];
+                        if (!dailyMap[dateStr]) dailyMap[dateStr] = {};
+                        if (!dailyMap[dateStr][modelId]) dailyMap[dateStr][modelId] = { rawIn: 0, rawOut: 0 };
+                        if (type === 'input') {
+                            dailyMap[dateStr][modelId].rawIn += numVal;
+                            modelUsage[modelId].rawIn += numVal;
+                        } else if (type === 'output') {
+                            dailyMap[dateStr][modelId].rawOut += numVal;
+                            modelUsage[modelId].rawOut += numVal;
+                        } else {
+                            dailyMap[dateStr][modelId].rawIn += numVal / 2;
+                            dailyMap[dateStr][modelId].rawOut += numVal / 2;
+                            modelUsage[modelId].rawIn += numVal / 2;
+                            modelUsage[modelId].rawOut += numVal / 2;
+                        }
                     });
                 });
             });
@@ -774,9 +816,12 @@ openai/gpt-5.5输出(输入区间：0-272000 输出区间：0-无限)-中国大�
         const dailyData = Object.keys(dailyMap).sort().map(date => {
             const models = dailyMap[date];
             let totalIn = 0, totalOut = 0;
-            Object.values(models).forEach(v => { totalIn += v.rawIn;
-                totalOut += v.rawOut; });
+            Object.values(models).forEach(v => { totalIn += v.rawIn; totalOut += v.rawOut; });
             return { date, models, totalRawIn: totalIn, totalRawOut: totalOut };
+        });
+        Object.values(modelUsage).forEach(u => {
+            u.rawIn = Math.round(u.rawIn * 100) / 100;
+            u.rawOut = Math.round(u.rawOut * 100) / 100;
         });
         currentDailyData = dailyData;
         currentModelUsage = modelUsage;
@@ -789,9 +834,9 @@ openai/gpt-5.5输出(输入区间：0-272000 输出区间：0-无限)-中国大�
         const ctx1 = document.getElementById('rawTokenChart').getContext('2d');
         if (rawChart) rawChart.destroy();
         rawChart = new Chart(ctx1, { type: 'bar', data: { labels: currentDailyData.map(d => d.date), datasets: [
-                    { label: '原始输入 (K)', data: currentDailyData.map(d => d.totalRawIn), backgroundColor: '#5b8def' },
-                    { label: '原始输出 (K)', data: currentDailyData.map(d => d.totalRawOut), backgroundColor: '#34d399' }
-                ] }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }, plugins: { tooltip: { mode: 'index' } } } });
+            { label: '原始输入 (K)', data: currentDailyData.map(d => d.totalRawIn), backgroundColor: '#5b8def' },
+            { label: '原始输出 (K)', data: currentDailyData.map(d => d.totalRawOut), backgroundColor: '#34d399' }
+        ]}, options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } } });
 
         const ctx2 = document.getElementById('billedTokenChart').getContext('2d');
         if (billedChart) billedChart.destroy();
@@ -810,11 +855,13 @@ openai/gpt-5.5输出(输入区间：0-272000 输出区间：0-无限)-中国大�
         const tbody = document.getElementById('modelDetailTbody');
         tbody.innerHTML = '';
         const ids = Object.keys(currentModelUsage);
-        if (!ids.length) { tbody.innerHTML = '<tr><td colspan="8">暂无数据</td></tr>'; return; }
+        if (!ids.length) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">暂无数据</td></tr>';
+            return;
+        }
         let totalBilled = 0;
         ids.forEach(id => {
             const u = currentModelUsage[id];
-            const rawTotal = u.rawIn + u.rawOut;
             const defTier = getDefaultTier(id);
             selectedTiers[id] = defTier;
             const res = computeBilled(u.rawIn, u.rawOut, id, defTier);
@@ -823,14 +870,14 @@ openai/gpt-5.5输出(输入区间：0-272000 输出区间：0-无限)-中国大�
             const multi = options.length > 1;
             const tr = document.createElement('tr');
             tr.innerHTML = `<td>${u.displayName}${multi ? ' <span class="badge multi">多区间</span>' : ''}</td>
-                <td>${u.rawIn.toFixed(2)}</td><td>${u.rawOut.toFixed(2)}</td><td>${rawTotal.toFixed(2)}</td>
+                <td>${u.rawIn.toFixed(2)}</td><td>${u.rawOut.toFixed(2)}</td><td>${(u.rawIn + u.rawOut).toFixed(2)}</td>
                 <td class="inCoeff">${res.inCoeff}</td><td class="outCoeff">${res.outCoeff}</td><td class="billed">${res.billed.toFixed(2)}</td>
                 <td>${multi ? `<select class="coeff-select" data-id="${id}">${options.map(o => `<option value="${o.tier}" ${o.tier===defTier?'selected':''}>${o.label} (${o.inCoeff}/${o.outCoeff})</option>`).join('')}</select>` : '标准'}</td>`;
             tbody.appendChild(tr);
         });
         const totalTr = document.createElement('tr');
         totalTr.className = 'row-total';
-        totalTr.innerHTML = `<td>合计</td><td>${ids.reduce((s,id)=>s+currentModelUsage[id].rawIn,0).toFixed(2)}</td><td>${ids.reduce((s,id)=>s+currentModelUsage[id].rawOut,0).toFixed(2)}</td><td>${(ids.reduce((s,id)=>s+currentModelUsage[id].rawIn+currentModelUsage[id].rawOut,0)).toFixed(2)}</td><td>-</td><td>-</td><td id="gtBilled">${totalBilled.toFixed(2)}</td><td></td>`;
+        totalTr.innerHTML = `<td>合计</td><td>${ids.reduce((s,id)=>s+currentModelUsage[id].rawIn,0).toFixed(2)}</td><td>${ids.reduce((s,id)=>s+currentModelUsage[id].rawOut,0).toFixed(2)}</td><td>${ids.reduce((s,id)=>s+currentModelUsage[id].rawIn+currentModelUsage[id].rawOut,0).toFixed(2)}</td><td>-</td><td>-</td><td id="gtBilled">${totalBilled.toFixed(2)}</td><td></td>`;
         tbody.appendChild(totalTr);
         tbody.querySelectorAll('.coeff-select').forEach(s => s.addEventListener('change', function() {
             const id = this.dataset.id;
@@ -841,9 +888,7 @@ openai/gpt-5.5输出(输入区间：0-272000 输出区间：0-无限)-中国大�
             row.querySelector('.inCoeff').textContent = r.inCoeff;
             row.querySelector('.outCoeff').textContent = r.outCoeff;
             row.querySelector('.billed').textContent = r.billed.toFixed(2);
-            let gt = 0;
-            document.querySelectorAll('#modelDetailTbody tr:not(.row-total) .billed').forEach(c => gt += parseFloat(c.textContent));
-            document.getElementById('gtBilled').textContent = gt.toFixed(2);
+            document.getElementById('gtBilled').textContent = [...document.querySelectorAll('#modelDetailTbody tr:not(.row-total) .billed')].reduce((s,c)=>s+parseFloat(c.textContent),0).toFixed(2);
             renderCharts();
             updateSummary();
         }));
@@ -852,9 +897,9 @@ openai/gpt-5.5输出(输入区间：0-272000 输出区间：0-无限)-中国大�
     function updateSummary() {
         let ti = 0, to = 0, tb = 0;
         Object.keys(currentModelUsage).forEach(id => {
-            const u = currentModelUsage[id];
-            ti += u.rawIn; to += u.rawOut;
-            tb += computeBilled(u.rawIn, u.rawOut, id, selectedTiers[id] || getDefaultTier(id)).billed;
+            ti += currentModelUsage[id].rawIn;
+            to += currentModelUsage[id].rawOut;
+            tb += computeBilled(currentModelUsage[id].rawIn, currentModelUsage[id].rawOut, id, selectedTiers[id] || getDefaultTier(id)).billed;
         });
         document.getElementById('sumRawTotal').textContent = (ti + to).toFixed(2);
         document.getElementById('sumRawOut').textContent = to.toFixed(2);
@@ -879,23 +924,18 @@ openai/gpt-5.5输出(输入区间：0-272000 输出区间：0-无限)-中国大�
 
     document.getElementById('queryBtn').onclick = fetchData;
     document.getElementById('resetBtn').onclick = () => {
-        ['apiKeyInput','startDateInput','endDateInput'].forEach(id => {
-            const el = document.getElementById(id);
-            if (id==='apiKeyInput') el.value='';
-            else if (id==='startDateInput') el.value='2026-04-30';
-            else el.value='2026-05-12';
-        });
+        document.getElementById('apiKeyInput').value = '';
+        document.getElementById('startDateInput').value = '2026-04-30';
+        document.getElementById('endDateInput').value = '2026-05-12';
         document.getElementById('corsNote').classList.remove('show');
         if (rawChart) rawChart.destroy();
         if (billedChart) billedChart.destroy();
         document.getElementById('modelDetailTbody').innerHTML = '<tr><td colspan="8">暂无数据</td></tr>';
         ['sumRawTotal','sumRawOut','sumRawIn','sumBilled'].forEach(id => document.getElementById(id).textContent='--');
-        currentDailyData=[]; currentModelUsage={};
     };
     document.getElementById('coeffSearchInput').oninput = function() { renderRefTable(this.value); };
 
-    renderRefTable();
-    console.log('工具就绪，内置系数项：', allRefEntries.length);
+    renderRefTable('');
 })();
 </script>
 </body>

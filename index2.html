@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Key 用量查询工具</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js">
+    </script>
+    <style>
+        :root {
+            --bg: #f5f6f8;
+            --card-bg: #ffffff;
+            --border: #e2e6ed;
+            --text: #1a1d23;
+            --text-secondary: #5f6673;
+            --primary: #3b6ff5;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --input-bg: #f9fafb;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+            --radius: 10px;
+            --radius-sm: 6px;
+            --font-mono: 'SF Mono','Cascadia Code','Consolas','Monaco',monospace;
+            --font-sans: 'Inter','Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: var(--font-sans); background: var(--bg); color: var(--text); padding: 16px; }
+        .container { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+        .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; box-shadow: var(--shadow-sm); }
+        .card-header { font-size: 15px; font-weight: 600; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+        .icon-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); }
+        .icon-dot.green { background: var(--accent-green); }
+        .icon-dot.orange { background: var(--accent-orange); }
+        .config-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+        .config-item { display: flex; flex-direction: column; gap: 4px; min-width: 120px; }
+        .config-item label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; }
+        .config-item input, .config-item select { height: 36px; padding: 0 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--input-bg); outline: none; }
+        .config-item input:focus, .config-item select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,111,245,0.08); }
+        .btn { height: 36px; padding: 0 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid transparent; }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-primary:hover { background: #2b5de0; }
+        .btn-outline { background: #fff; color: var(--text-secondary); border-color: var(--border); }
+        .summary-row { display: flex; flex-wrap: wrap; gap: 16px; }
+        .summary-item { flex: 1; min-width: 120px; background: var(--input-bg); border-radius: var(--radius-sm); padding: 14px 12px; border: 1px solid var(--border); }
+        .summary-item .label { font-size: 11px; font-weight: 600; color: var(--text-secondary); }
+        .summary-item .value { font-size: 20px; font-weight: 700; font-family: var(--font-mono); }
+        .chart-wrap { height: 320px; margin-top: 8px; }
+        .chart-wrap.short { height: 280px; }
+        .table-wrap { overflow-x: auto; }
+        .table-wrap.scrollable { max-height: 440px; overflow-y: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 700px; }
+        table thead th { background: #f8f9fb; font-weight: 600; color: var(--text-secondary); font-size: 11px; padding: 10px; text-align: right; border-bottom: 2px solid var(--border); white-space: nowrap; }
+        table thead th:first-child { text-align: left; }
+        table tbody td { padding: 9px 10px; border-bottom: 1px solid #f0f1f4; text-align: right; font-family: var(--font-mono); font-size: 12px; white-space: nowrap; }
+        table tbody td:first-child { text-align: left; font-family: var(--font-sans); font-weight: 500; }
+        table tbody tr:hover { background: #fafbfc; }
+        .row-total { font-weight: 700; background: #f8f9fb; border-top: 2px solid var(--border); }
+        .coeff-select { font-size: 11px; padding: 3px 6px; border-radius: 4px; border: 1px solid var(--border); background: #fff; cursor: pointer; max-width: 200px; outline: none; }
+        .badge { font-size: 10px; padding: 2px 7px; border-radius: 10px; background: #eef3ff; color: #3b6ff5; }
+        .badge.multi { background: #fef3c7; color: #b45309; }
+        .search-wrap { position: relative; margin-bottom: 10px; }
+        .search-wrap input { width: 100%; height: 36px; padding: 0 12px 0 34px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--input-bg); }
+        .search-wrap .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #a0a7b3; }
+        .no-result { text-align: center; padding: 24px; color: var(--text-secondary); }
+        .cors-note { font-size: 11px; color: #ef4444; margin-top: 8px; padding: 8px 12px; background: #fef2f2; border-radius: var(--radius-sm); border: 1px solid #fecaca; display: none; }
+        @media (max-width: 768px) { .config-row { flex-direction: column; } .summary-row { flex-direction: column; } .chart-wrap { height: 240px; } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- API 配置卡片 -->
+    <div class="card" id="configCard">
+        <div class="card-header"><span class="icon-dot"></span>API 配置</div>
+        <div class="config-row">
+            <div class="config-item" style="flex:2"><label>API KEY</label><input type="text" id="apiKeyInput" placeholder="请输入 API Key (sk-...)" value=""></div>
+            <div class="config-item"><label>时间粒度</label><select id="granularitySelect"><option value="day" selected>按天</option><option value="hour">按小时</option></select></div>
+            <div class="config-item"><label>开始日期</label><input type="date" id="startDateInput" value="2026-04-30"></div>
+            <div class="config-item"><label>结束日期</label><input type="date" id="endDateInput" value="2026-05-12"></div>
+            <div class="config-item"><label>&nbsp;</label><div style="display:flex;gap:8px;"><button class="btn btn-primary" id="queryBtn">查询周期</button><button class="btn btn-outline" id="resetBtn">重置</button></div></div>
+        </div>
+        <div class="cors-note" id="corsNote">⚠ CORS 错误：请安装 Moesif CORS 浏览器插件。Key 仅保存在本地浏览器。</div>
+    </div>
+
+    <!-- 独立汇总卡片（新增原始总 Token） -->
+    <div class="card" id="summaryCard">
+        <div class="summary-row" id="summaryRow">
+            <div class="summary-item"><div class="label">原始总 Token (K)</div><div class="value small" id="sumRawTotal">--</div></div>
+            <div class="summary-item"><div class="label">原始输出 (K)</div><div class="value small" id="sumRawOut">--</div></div>
+            <div class="summary-item"><div class="label">原始输入 (K)</div><div class="value small" id="sumRawIn">--</div></div>
+            <div class="summary-item"><div class="label">最终消耗 (计费 Token K)</div><div class="value" id="sumBilled">--</div></div>
+        </div>
+    </div>
+
+    <!-- 用量趋势（原始 Token） -->
+    <div class="card"><div class="card-header"><span class="icon-dot green"></span>用量趋势（原始 Token）</div><div class="chart-wrap"><canvas id="rawTokenChart"></canvas></div></div>
+
+    <!-- 最终消耗趋势（计费 Token） -->
+    <div class="card"><div class="card-header"><span class="icon-dot orange"></span>最终消耗趋势（计费 Token）</div><div class="chart-wrap short"><canvas id="billedTokenChart"></canvas></div></div>
+
+    <!-- 按模型明细 -->
+    <div class="card">
+        <div class="card-header"><span class="icon-dot"></span>按模型明细</div>
+        <div class="table-wrap"><table id="modelDetailTable"><thead><tr><th>模型名称</th><th>原始输入 (K)</th><th>原始输出 (K)</th><th>原始总计 (K)</th><th>输入系数</th><th>输出系数</th><th>最终消耗 (K)</th><th>抵扣区间选择</th></tr></thead><tbody id="modelDetailTbody"></tbody></table></div>
+    </div>
+
+    <!-- 模型抵扣系数参考表 -->
+    <div class="card">
+        <div class="card-header"><span class="icon-dot"></span>模型抵扣系数参考表</div>
+        <p style="font-size:11px;color:var(--text-secondary);margin-bottom:8px;">公式：最终消耗 = 原始输入 Token × 输入系数 + 原始输出 Token × 输出系数。系数不可编辑。</p>
+        <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" id="coeffSearchInput" placeholder="搜索模型名称（如 claude-4.5-sonnet）..."></div>
+        <div class="table-wrap scrollable"><table id="coeffRefTable"><thead><tr><th>模型名称</th><th>输入/输出</th><th>抵扣区间</th><th>抵扣时段</th><th>抵扣系数</th></tr></thead><tbody id="coeffRefTbody"></tbody></table><div class="no-result" id="coeffNoResult" style="display:none;">未找到匹配的模型</div></div>
+    </div>
+</div>
+
+<script>
+(function() {
+    const API_BASE = 'https://api.qnaigc.com';
+    const USAGE_EP = '/v2/stat/usage';
+
+    // ─────────── 完整的506项倍率原始文本 ───────────
+    const RAW_COEFF_TEXT = `deepseek-r1 模型输入 token-中国大陆	全时段	1
+deepseek-r1 模型输出 token-中国大陆	全时段	4
+deepseek v3 模型输入 token-中国大陆	全时段	0.5
+deepseek v3 模型输出 token-中国大陆	全时段	2
+deepseek-r1-32b 模型输入 token-中国大陆	全时段	0.37
+deepseek-r1-32b 模型输出 token-中国大陆	全时段	1.5
+qwen-max-2025-01-25 模型输入 token-中国大陆	全时段	0.6
+qwen-max-2025-01-25 模型输出 token-中国大陆	全时段	2.4
+qwen2.5-72b-instruct 模型输入 token-中国大陆	全时段	1
+qwen2.5-72b-instruct 模型输出 token-中国大陆	全时段	3
+qwen2-72b-instruct 模型输入 token-中国大陆	全时段	1
+qwen2-72b-instruct 模型输出 token-中国大陆	全时段	3
+qwen2-vl-72b-instruct 模型输入 token-中国大陆	全时段	4
+qwen2-vl-72b-instruct 模型输出 token-中国大陆	全时段	12
+qwq-32b 模型输入 token-中国大陆	全时段	0.5
+qwq-32b 模型输出 token-中国大陆	全时段	1.5
+qwen3-235b-a22b 模型输入 token-中国大陆	全时段	0.5
+qwen3-235b-a22b 模型输出 token-中国大陆	全时段	2
+qwen3-235b-a22b-think 模型输出 token-中国大陆	全时段	5
+qwen3-32b 模型输入 token-中国大陆	全时段	0.5
+qwen3-32b 模型输出 token-中国大陆	全时段	2
+qwen3-32b-think 模型输出 token-中国大陆	全时段	5
+qwen3-30b-a3b 模型输入 token-中国大陆	全时段	0.18
+qwen3-30b-a3b 模型输出 token-中国大陆	全时段	0.75
+qwen3-30b-a3b-think 模型输出 token-中国大陆	全时段	1.87
+qwen2.5-vl-7b-instruct 模型输入 token-中国大陆	全时段	0.5
+qwen2.5-vl-7b-instruct 模型输出 token-中国大陆	全时段	1.25
+qwen-vl-max-2025-01-25 模型输入 token-中国大陆	全时段	0.75
+qwen-vl-max-2025-01-25 模型输出 token-中国大陆	全时段	2.25
+doubao-1.5-pro-32k 模型输入 token-中国大陆	全时段	0.2
+doubao-1.5-pro-32k 模型输出 token-中国大陆	全时段	0.5
+doubao-1.5-vision-pro 模型输入 token-中国大陆	全时段	0.75
+doubao-1.5-vision-pro 模型输出 token-中国大陆	全时段	2.25
+doubao-1.5-thinking-pro 模型输入 token-中国大陆	全时段	1
+doubao-1.5-thinking-pro 模型输出 token-中国大陆	全时段	4
+qwen2.5-vl-72b-instruct 模型输入 token-中国大陆	全时段	4
+qwen2.5-vl-72b-instruct 模型输出 token-中国大陆	全时段	12
+gemini-2.0-flash-lite 模型输入 token-中国大陆	全时段	0.13
+gemini-2.0-flash-lite 模型输出 token-中国大陆	全时段	0.54
+gemini-2.0-flash 模型输入 token-中国大陆	全时段	0.27
+gemini-2.0-flash 模型输出 token-中国大陆	全时段	1.08
+claude-3.7-sonnet 模型输入 token-中国大陆	全时段	4.86
+claude-3.7-sonnet 模型输出 token-中国大陆	全时段	24.3
+claude-4.0-sonnet 模型输入 token-中国大陆	全时段	5.4
+claude-4.0-sonnet 模型输出 token-中国大陆	全时段	27
+qwen-turbo 模型输入 token-中国大陆	全时段	0.08
+qwen-turbo 模型输出 token-中国大陆	全时段	0.15
+kimi-k2 模型输入 token-中国大陆	全时段	1
+kimi-k2 模型输出 token-中国大陆	全时段	4
+gemini-2.5-flash 模型输入 token-中国大陆	全时段	0.54
+gemini-2.5-flash 模型输出 token-中国大陆	全时段	4.5
+gemini-2.5-flash-lite 模型输入token-中国大陆	全时段	0.18
+gemini-2.5-flash-lite模型输出token-中国大陆	全时段	0.72
+gemini-2.5-pro 模型输入token-中国大陆	全时段	4.5
+gemini-2.5-pro 模型输出token-中国大陆	全时段	27
+glm-4.5 模型输入token-中国大陆	全时段	1
+glm-4.5 模型输出token-中国大陆	全时段	4
+glm-4.5-air 模型输入token-中国大陆	全时段	0.5
+glm-4.5-air 模型输出token-中国大陆	全时段	2
+claude-4.1-opus 模型输入 token-中国大陆	全时段	27
+claude-4.1-opus 模型输出 token-中国大陆	全时段	135
+gpt-oss-120b 模型输入 token-中国大陆	全时段	0.27
+gpt-oss-120b 模型输出 token-中国大陆	全时段	1.35
+gpt-oss-20b 模型输入 token-中国大陆	全时段	0.18
+gpt-oss-20b 模型输出 token-中国大陆	全时段	0.9
+claude-4.0-opus 模型输入 token-中国大陆	全时段	27
+claude-4.0-opus 模型输出 token-中国大陆	全时段	135
+qwen3-235b-a22b-instruct-2507 模型输入 token-中国大陆	全时段	0.5
+qwen3-235b-a22b-instruct-2507 模型输出 token-中国大陆	全时段	2
+qwen3-235b-a22b-thinking-2507 模型输入 token-中国大陆	全时段	0.5
+qwen3-235b-a22b-thinking-2507 模型输出 token-中国大陆	全时段	5
+deepseek-v3.1 模型输入 token-中国大陆	全时段	1
+deepseek-v3.1 模型输出 token-中国大陆	全时段	3
+qwen3-coder-480b-a35b-instruct 模型输入 token-中国大陆	全时段	1.5
+qwen3-coder-480b-a35b-instruct 模型输出 token-中国大陆	全时段	6
+claude-3.5-sonnet 模型推理输入 token-中国大陆	全时段	5.4
+claude-3.5-sonnet 模型推理输出 token-中国大陆	全时段	27
+claude-3.5-haiku 模型推理输入 token-中国大陆	全时段	1.44
+claude-3.5-haiku 模型推理输出 token-中国大陆	全时段	7.2
+x-ai/grok-code-fast-1 模型推理输入 token-中国大陆	全时段	0.36
+x-ai/grok-code-fast-1 模型推理输出 token-中国大陆	全时段	2.7
+moonshotai/kimi-k2-0905 模型推理输入 token-中国大陆	全时段	1
+moonshotai/kimi-k2-0905 模型推理输出 token-中国大陆	全时段	4
+qwen3-max-preview 模型推理输入 token-中国大陆	全时段	1.5
+qwen3-max-preview 模型推理输出 token-中国大陆	全时段	6
+deepseek/deepseek-v3.1-terminus-thinking 模型推理输入 token-中国大陆	全时段	1
+deepseek/deepseek-v3.1-terminus-thinking 模型推理输出 token-中国大陆	全时段	3
+deepseek/deepseek-v3.1-terminus 模型推理输入 token-中国大陆	全时段	1
+deepseek/deepseek-v3.1-terminus 模型推理输出 token-中国大陆	全时段	3
+qwen3-max 模型推理输入 token-中国大陆	全时段	1.5
+qwen3-max 模型推理输出 token-中国大陆	全时段	6
+openai/gpt-5 模型推理输入 token-中国大陆	全时段	2.25
+openai/gpt-5 模型推理输出 token-中国大陆	全时段	18
+deepseek/deepseek-v3.2-exp-thinking 模型推理输入 token-中国大陆	全时段	0.5
+deepseek/deepseek-v3.2-exp-thinking 模型推理输出 token-中国大陆	全时段	0.75
+deepseek/deepseek-v3.2-exp 模型推理输入 token-中国大陆	全时段	0.5
+deepseek/deepseek-v3.2-exp 模型推理输出 token-中国大陆	全时段	0.75
+claude-4.5-sonnet 模型推理输入 token-中国大陆	全时段	5.4
+claude-4.5-sonnet 模型推理输出 token-中国大陆	全时段	27
+x-ai/grok-4-fast 模型推理输入 token-中国大陆	全时段	0.36
+x-ai/grok-4-fast 模型推理输出 token-中国大陆	全时段	0.9
+claude-4.5-haiku 模型推理输入 token-中国大陆	全时段	1.8
+claude-4.5-haiku 模型推理输出 token-中国大陆	全时段	9
+z-ai/glm-4.6输入-中国大陆	全时段	1.8
+z-ai/glm-4.6 模型推理输出 token-中国大陆	全时段	3.15
+deepseek-v3-search输入-中国大陆	全时段	0.5
+deepseek-v3-search输出-中国大陆	全时段	2
+deepseek-r1-search输入-中国大陆	全时段	1
+deepseek-r1-search输出-中国大陆	全时段	4
+claude-3.7-sonnet批量输入-中国大陆	全时段	2.7
+claude-3.7-sonnet批量输出-中国大陆	全时段	13.5
+claude-4.5-sonnet输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	5.4
+claude-4.5-sonnet输出(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	27
+claude-4.5-sonnet批量输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	2.7
+claude-4.5-sonnet批量输出(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	13.5
+claude-4.5-sonnet输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	10.8
+claude-4.5-sonnet输出(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	40.5
+claude-4.5-sonnet批量输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	2.7
+claude-4.5-sonnet批量输出(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	13.5
+x-ai/grok-4-fast输入(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.36
+x-ai/grok-4-fast输出(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.9
+x-ai/grok-4-fast输入(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	0.72
+x-ai/grok-4-fast输出(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	1.8
+gemini-2.5-flash-image 模型图片输出 token-中国大陆	全时段	54
+gemini-2.5-flash-image图片输入-中国大陆	全时段	0.54
+gemini-2.5-flash-image音频输入-中国大陆	全时段	1.8
+gemini-2.5-flash-image视频输入-中国大陆	全时段	0.54
+gemini-2.5-flash-image文本输入-中国大陆	全时段	0.54
+deepseek-v3批量输入-中国大陆	全时段	0.25
+deepseek-v3批量输出-中国大陆	全时段	1
+deepseek-r1批量输入-中国大陆	全时段	0.5
+deepseek-r1批量输出-中国大陆	全时段	2
+deepseek-v3-0324输入-中国大陆	全时段	0.5
+deepseek-v3-0324输出-中国大陆	全时段	2
+deepseek-v3-0324批量输入-中国大陆	全时段	0.25
+deepseek-v3-0324批量输出-中国大陆	全时段	1
+deepseek-r1-0528输入-中国大陆	全时段	1
+deepseek-r1-0528输出-中国大陆	全时段	4
+deepseek-r1-0528批量输入-中国大陆	全时段	0.5
+deepseek-r1-0528批量输出-中国大陆	全时段	2
+deepseek-v3.1批量输入-中国大陆	全时段	0.5
+deepseek-v3.1批量输出-中国大陆	全时段	1.5
+deepseek-v3-nocache输入-中国大陆	全时段	0.5
+deepseek-v3-nocache输出-中国大陆	全时段	2
+deepseek-v3-tool输入-中国大陆	全时段	0.5
+deepseek-v3-tool输出-中国大陆	全时段	2
+MiniMax-M1输入-中国大陆	全时段	1
+MiniMax-M1输出-中国大陆	全时段	4
+minimax/minimax-m2输入-中国大陆	全时段	0.53
+minimax/minimax-m2输出-中国大陆	全时段	2.1
+qwen3-next-80b-a3b-instruct输入-中国大陆	全时段	0.25
+qwen3-next-80b-a3b-instruct输出-中国大陆	全时段	1
+qwen3-next-80b-a3b-thinking输入-中国大陆	全时段	0.25
+qwen3-next-80b-a3b-thinking输出-中国大陆	全时段	2.5
+qwen3-max-preview输入(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	1.5
+qwen3-max-preview输出(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	6
+qwen3-max-preview输入(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	2.5
+qwen3-max-preview输出(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	10
+qwen3-max-preview输入(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	3.75
+qwen3-max-preview输出(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	15
+qwen3-coder-480b-a35b-instruct输入(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	1.5
+qwen3-coder-480b-a35b-instruct输出(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	6
+qwen3-coder-480b-a35b-instruct输入(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	2.25
+qwen3-coder-480b-a35b-instruct输出(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	9
+qwen3-coder-480b-a35b-instruct输入(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	3.75
+qwen3-coder-480b-a35b-instruct输出(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	15
+qwq-plus输入-中国大陆	全时段	0.5
+qwq-plus输出-中国大陆	全时段	1.5
+qwen3-32b思考输入-中国大陆	全时段	0.5
+qwen3-32b思考输出-中国大陆	全时段	5
+qwen3-32b非思考输入-中国大陆	全时段	0.5
+qwen3-32b非思考输出-中国大陆	全时段	2
+qwen3-30b-a3b思考输入-中国大陆	全时段	0.19
+qwen3-30b-a3b思考输出-中国大陆	全时段	1.88
+qwen3-30b-a3b非思考输入-中国大陆	全时段	0.19
+qwen3-30b-a3b非思考输出-中国大陆	全时段	0.75
+qwen3-235b-a22b思考输入-中国大陆	全时段	0.5
+qwen3-235b-a22b思考输出-中国大陆	全时段	5
+qwen3-235b-a22b非思考输入-中国大陆	全时段	0.5
+qwen3-235b-a22b非思考输出-中国大陆	全时段	2
+qwen2.5-omni-7b输入-中国大陆	全时段	0.15
+qwen2.5-omni-7b输出-中国大陆	全时段	0.6
+qwen-vl-max-latest输入-中国大陆	全时段	0.75
+qwen-vl-max-latest输出-中国大陆	全时段	2.25
+qwen-turbo思考输入-中国大陆	全时段	0.08
+qwen-turbo思考输出-中国大陆	全时段	0.75
+qwen-turbo非思考输入-中国大陆	全时段	0.08
+qwen-turbo非思考输出-中国大陆	全时段	0.15
+doubao-seed-1.6-thinking输入(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	0.2
+doubao-seed-1.6-thinking输出(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	2
+doubao-seed-1.6-thinking输入(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	0.3
+doubao-seed-1.6-thinking输出(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	4
+doubao-seed-1.6-thinking输入(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	0.6
+doubao-seed-1.6-thinking输出(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	6
+doubao-seed-1.6-flash输入(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	0.04
+doubao-seed-1.6-flash输出(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	0.38
+doubao-seed-1.6-flash输入(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	0.08
+doubao-seed-1.6-flash输出(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	0.75
+doubao-seed-1.6-flash输入(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	0.15
+doubao-seed-1.6-flash输出(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	1.5
+doubao-seed-1.6输入(输入区间：0-32000 输出区间：0-200)-中国大陆	全时段	0.2
+doubao-seed-1.6输出(输入区间：0-32000 输出区间：0-200)-中国大陆	全时段	0.5
+doubao-seed-1.6输入(输入区间：0-32000 输出区间：200-无限)-中国大陆	全时段	0.2
+doubao-seed-1.6输出(输入区间：0-32000 输出区间：200-无限)-中国大陆	全时段	2
+doubao-seed-1.6输入(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	0.3
+doubao-seed-1.6输出(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	4
+doubao-seed-1.6输入(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	0.6
+doubao-seed-1.6输出(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	6
+claude-3.5-sonnet批量输入-中国大陆	全时段	2.7
+claude-3.5-sonnet批量输出-中国大陆	全时段	13.5
+claude-3.5-haiku批量输入-中国大陆	全时段	0.72
+claude-3.5-haiku批量输出-中国大陆	全时段	3.6
+claude-4.0-opus批量输入-中国大陆	全时段	13.5
+claude-4.0-opus批量输出-中国大陆	全时段	67.5
+claude-4.0-sonnet输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	5.4
+claude-4.0-sonnet输出(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	27
+claude-4.0-sonnet批量输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	2.7
+claude-4.0-sonnet批量输出(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	13.5
+claude-4.0-sonnet输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	10.8
+claude-4.0-sonnet输出(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	40.5
+claude-4.0-sonnet批量输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	2.7
+claude-4.0-sonnet批量输出(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	13.5
+claude-4.1-opus批量输入-中国大陆	全时段	13.5
+claude-4.1-opus批量输出-中国大陆	全时段	67.5
+gemini-2.0-flash-lite批量输入-中国大陆	全时段	0.07
+gemini-2.0-flash-lite批量输出-中国大陆	全时段	0.27
+gemini-2.0-flash批量输入-中国大陆	全时段	0.14
+gemini-2.0-flash批量输出-中国大陆	全时段	0.54
+gemini-2.5-flash-lite批量输入-中国大陆	全时段	0.09
+gemini-2.5-flash-lite批量输出-中国大陆	全时段	0.36
+gemini-2.5-flash批量输入-中国大陆	全时段	0.27
+gemini-2.5-flash批量输出-中国大陆	全时段	2.25
+gemini-2.5-pro输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	2.25
+gemini-2.5-pro输出(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	18
+gemini-2.5-pro批量输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	1.12
+gemini-2.5-pro批量输出(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	9
+gemini-2.5-pro输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	4.5
+gemini-2.5-pro输出(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	27
+gemini-2.5-pro批量输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	1.12
+gemini-2.5-pro批量输出(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	9
+qwen3-max输入(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	1.5
+qwen3-max输出(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	6
+qwen3-max输入(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	2.5
+qwen3-max输出(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	10
+qwen3-max输入(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	3.75
+qwen3-max输出(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	15
+avatar-deepseek-v3输入-中国大陆	全时段	0.5
+avatar-deepseek-v3输出-中国大陆	全时段	2
+kvl-qwen2.5-vl-7b 模型推理输入 token-中国大陆	全时段	0.5
+kvl-qwen2.5-vl-7b 模型推理输出 token-中国大陆	全时段	1.25
+kvl-qwen2.5-vl-3b 模型推理输入 token-中国大陆	全时段	0.3
+kvl-qwen2.5-vl-3b 模型推理输出 token-中国大陆	全时段	0.9
+moonshotai/kimi-k2-thinking 模型推理输入 token-中国大陆	全时段	1
+moonshotai/kimi-k2-thinking 模型推理输出 token-中国大陆	全时段	4
+gemini-3.0-pro-preview输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	3.6
+gemini-3.0-pro-preview输出(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	21.6
+gemini-3.0-pro-preview输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	7.2
+gemini-3.0-pro-preview输出(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	32.4
+claude-4.5-opus输入-中国大陆	全时段	9
+claude-4.5-opus输出-中国大陆	全时段	45
+gemini-3.0-pro-image-preview输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	3.6
+gemini-3.0-pro-image-preview输出(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	21.6
+gemini-3.0-pro-image-preview图片输出(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	216
+gemini-3.0-pro-image-preview输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	7.2
+gemini-3.0-pro-image-preview输出(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	32.4
+gemini-3.0-pro-image-preview图片输出(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	216
+deepseek/deepseek-v3.2-251201输入-中国大陆	全时段	0.5
+deepseek/deepseek-v3.2-251201输出-中国大陆	全时段	0.75
+deepseek/deepseek-v3.2-speciale输入-中国大陆	全时段	0.5
+deepseek/deepseek-v3.2-speciale输出-中国大陆	全时段	0.75
+deepseek/deepseek-math-v2输入-中国大陆	全时段	1
+deepseek/deepseek-math-v2输出-中国大陆	全时段	4
+gemini-3.0-pro-image-preview文本输出(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	21.6
+gemini-3.0-pro-image-preview文本输出(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	21.6
+openai/gpt-5.2输入-中国大陆	全时段	3.15
+openai/gpt-5.2输出-中国大陆	全时段	25.2
+gemini-3.0-flash-preview输出-中国大陆	全时段	5.4
+gemini-3.0-flash-preview音频输入-中国大陆	全时段	1.8
+gemini-3.0-flash-preview文本输入-中国大陆	全时段	0.9
+x-ai/grok-4.1-fast-non-reasoning输出(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.9
+x-ai/grok-4.1-fast-non-reasoning缓存输入(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.09
+x-ai/grok-4.1-fast-non-reasoning非缓存输入(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.36
+x-ai/grok-4.1-fast-non-reasoning输出(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	1.8
+x-ai/grok-4.1-fast-non-reasoning缓存输入(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	0.18
+x-ai/grok-4.1-fast-non-reasoning非缓存输入(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	0.72
+x-ai/grok-4.1-fast-reasoning输出(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.9
+x-ai/grok-4.1-fast-reasoning缓存输入(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.09
+x-ai/grok-4.1-fast-reasoning非缓存输入(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.36
+x-ai/grok-4.1-fast-reasoning输出(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	1.8
+x-ai/grok-4.1-fast-reasoning缓存输入(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	0.18
+x-ai/grok-4.1-fast-reasoning非缓存输入(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	0.72
+x-ai/grok-4-fast-reasoning输出(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.9
+x-ai/grok-4-fast-reasoning缓存输入(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.09
+x-ai/grok-4-fast-reasoning非缓存输入(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.36
+x-ai/grok-4-fast-reasoning输出(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	1.8
+x-ai/grok-4-fast-reasoning缓存输入(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	0.18
+x-ai/grok-4-fast-reasoning非缓存输入(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	0.72
+x-ai/grok-4-fast-non-reasoning输出(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.9
+x-ai/grok-4-fast-non-reasoning缓存输入(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.09
+x-ai/grok-4-fast-non-reasoning非缓存输入(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.36
+x-ai/grok-4-fast-non-reasoning输出(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	1.8
+x-ai/grok-4-fast-non-reasoning缓存输入(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	0.18
+x-ai/grok-4-fast-non-reasoning非缓存输入(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	0.72
+x-ai/grok-4.1-fast输入-中国大陆	全时段	0.36
+x-ai/grok-4.1-fast输出-中国大陆	全时段	0.9
+z-ai/glm-4.7输入-中国大陆	全时段	0.79
+z-ai/glm-4.7输出-中国大陆	全时段	3.13
+minimax/minimax-m2.1输入-中国大陆	全时段	0.53
+minimax/minimax-m2.1输出-中国大陆	全时段	2.1
+stepfun-ai/gelab-zero-4b-preview输入-中国大陆	全时段	0.15
+stepfun-ai/gelab-zero-4b-preview输出-中国大陆	全时段	0.3
+z-ai/autoglm-phone-9b输入-中国大陆	全时段	0.15
+z-ai/autoglm-phone-9b输出-中国大陆	全时段	0.3
+xiaomi/mimo-v2-flash输入-中国大陆	全时段	0.18
+xiaomi/mimo-v2-flash输出-中国大陆	全时段	0.53
+gemini-2.5-flash-image 模型输入 token-中国大陆	全时段	0.54
+claude-3.7-sonnet缓存输入-中国大陆	全时段	0.54
+claude-3.7-sonnet缓存创建-中国大陆	全时段	6.75
+claude-3.7-sonnet非缓存输入-中国大陆	全时段	5.4
+gemini-2.5-flash缓存输入-中国大陆	全时段	0.06
+gemini-2.5-flash非缓存输入-中国大陆	全时段	0.54
+gemini-3.0-pro-preview缓存输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	0.36
+gemini-3.0-pro-preview非缓存输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	3.6
+gemini-3.0-pro-preview缓存输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	0.72
+gemini-3.0-pro-preview非缓存输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	7.2
+claude-3.5-sonnet缓存输入-中国大陆	全时段	0.54
+claude-3.5-sonnet缓存创建-中国大陆	全时段	6.75
+claude-3.5-sonnet非缓存输入-中国大陆	全时段	5.4
+claude-3.5-haiku缓存输入-中国大陆	全时段	0.15
+claude-3.5-haiku缓存创建-中国大陆	全时段	1.8
+claude-3.5-haiku非缓存输入-中国大陆	全时段	1.44
+claude-4.0-opus缓存输入-中国大陆	全时段	2.7
+claude-4.0-opus缓存创建-中国大陆	全时段	33.75
+claude-4.0-opus非缓存输入-中国大陆	全时段	27
+claude-4.5-opus缓存输入-中国大陆	全时段	0.9
+claude-4.5-opus缓存创建-中国大陆	全时段	11.25
+claude-4.5-opus非缓存输入-中国大陆	全时段	9
+claude-4.5-haiku缓存输入-中国大陆	全时段	0.18
+claude-4.5-haiku缓存创建-中国大陆	全时段	2.25
+claude-4.5-haiku非缓存输入-中国大陆	全时段	1.8
+claude-4.5-sonnet缓存输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	0.54
+claude-4.5-sonnet缓存创建(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	6.75
+claude-4.5-sonnet非缓存输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	5.4
+claude-4.5-sonnet缓存输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	1.08
+claude-4.5-sonnet缓存创建(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	13.5
+claude-4.5-sonnet非缓存输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	10.8
+claude-4.0-sonnet缓存输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	0.54
+claude-4.0-sonnet缓存创建(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	6.75
+claude-4.0-sonnet非缓存输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	5.4
+claude-4.0-sonnet缓存输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	1.08
+claude-4.0-sonnet缓存创建(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	13.5
+claude-4.0-sonnet非缓存输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	10.8
+claude-4.1-opus缓存输入-中国大陆	全时段	2.7
+claude-4.1-opus缓存创建-中国大陆	全时段	33.75
+claude-4.1-opus非缓存输入-中国大陆	全时段	27
+qwen3-max-2026-01-23输入(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	0.63
+qwen3-max-2026-01-23输出(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	2.5
+qwen3-max-2026-01-23输入(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	1
+qwen3-max-2026-01-23输出(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	4
+qwen3-max-2026-01-23输入(输入区间：128000-256000 输出区间：0-无限)-中国大陆	全时段	1.75
+qwen3-max-2026-01-23输出(输入区间：128000-256000 输出区间：0-无限)-中国大陆	全时段	7
+moonshotai/kimi-k2.5输入-中国大陆	全时段	1
+moonshotai/kimi-k2.5输出-中国大陆	全时段	5.25
+qwen3-30b-a3b-thinking-2507输入-中国大陆	全时段	0.19
+qwen3-30b-a3b-thinking-2507输出-中国大陆	全时段	1.9
+qwen3-30b-a3b-instruct-2507输入-中国大陆	全时段	0.19
+qwen3-30b-a3b-instruct-2507输出-中国大陆	全时段	0.75
+openai/gpt-5.2-codex输入-中国大陆	全时段	3.15
+openai/gpt-5.2-codex输出-中国大陆	全时段	25.2
+claude-4.6-opus输出(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	45
+claude-4.6-opus缓存输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	0.9
+claude-4.6-opus缓存创建(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	11.25
+claude-4.6-opus非缓存输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	9
+claude-4.6-opus输出(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	67.5
+claude-4.6-opus缓存输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	1.8
+claude-4.6-opus缓存创建(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	22.5
+claude-4.6-opus非缓存输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	18
+openai/gpt-5.3-codex输入-中国大陆	全时段	3.15
+openai/gpt-5.3-codex输出-中国大陆	全时段	25.2
+qwen3-vl-30b-a3b-instruct输入-中国大陆	全时段	0.19
+qwen3-vl-30b-a3b-instruct输出-中国大陆	全时段	0.75
+qwen3-vl-30b-a3b-thinking输入-中国大陆	全时段	0.19
+qwen3-vl-30b-a3b-thinking输出-中国大陆	全时段	1.88
+z-ai/glm-5输入(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	1
+z-ai/glm-5输出(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	4.5
+z-ai/glm-5输入(输入区间：32000-无限 输出区间：0-无限)-中国大陆	全时段	1.5
+z-ai/glm-5输出(输入区间：32000-无限 输出区间：0-无限)-中国大陆	全时段	5.5
+minimax/minimax-m2.5输入-中国大陆	全时段	0.53
+minimax/minimax-m2.5输出-中国大陆	全时段	2.1
+qwen3.5-397b-a17b输入(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.3
+qwen3.5-397b-a17b输出(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	1.8
+qwen3.5-397b-a17b输入(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	0.75
+qwen3.5-397b-a17b输出(输入区间：128000-无限 输出区间：0-无限)-中国大陆	全时段	4.5
+gemini-3.1-pro-preview输出(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	21.6
+gemini-3.1-pro-preview缓存输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	0.36
+gemini-3.1-pro-preview非缓存输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	3.6
+gemini-3.1-pro-preview输出(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	32.4
+gemini-3.1-pro-preview缓存输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	0.72
+gemini-3.1-pro-preview非缓存输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	7.2
+claude-4.6-sonnet输出(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	27
+claude-4.6-sonnet缓存输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	0.54
+claude-4.6-sonnet缓存创建(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	6.75
+claude-4.6-sonnet非缓存输入(输入区间：0-200000 输出区间：0-无限)-中国大陆	全时段	5.4
+claude-4.6-sonnet输出(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	40.5
+claude-4.6-sonnet缓存输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	1.08
+claude-4.6-sonnet缓存创建(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	13.5
+claude-4.6-sonnet非缓存输入(输入区间：200000-无限 输出区间：0-无限)-中国大陆	全时段	10.8
+doubao-seed-2.0-lite输入(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	0.15
+doubao-seed-2.0-lite输出(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	0.9
+doubao-seed-2.0-lite输入(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	0.23
+doubao-seed-2.0-lite输出(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	1.35
+doubao-seed-2.0-lite输入(输入区间：128000-256000 输出区间：0-无限)-中国大陆	全时段	0.45
+doubao-seed-2.0-lite输出(输入区间：128000-256000 输出区间：0-无限)-中国大陆	全时段	2.7
+doubao-seed-2.0-mini输入(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	0.05
+doubao-seed-2.0-mini输出(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	0.5
+doubao-seed-2.0-mini输入(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	0.1
+doubao-seed-2.0-mini输出(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	1
+doubao-seed-2.0-mini输入(输入区间：128000-256000 输出区间：0-无限)-中国大陆	全时段	0.2
+doubao-seed-2.0-mini输出(输入区间：128000-256000 输出区间：0-无限)-中国大陆	全时段	2
+doubao-seed-2.0-pro输入(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	0.8
+doubao-seed-2.0-pro输出(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	4
+doubao-seed-2.0-pro输入(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	1.2
+doubao-seed-2.0-pro输出(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	6
+doubao-seed-2.0-pro输入(输入区间：128000-256000 输出区间：0-无限)-中国大陆	全时段	2.4
+doubao-seed-2.0-pro输出(输入区间：128000-256000 输出区间：0-无限)-中国大陆	全时段	12
+doubao-seed-2.0-code输入(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	0.8
+doubao-seed-2.0-code输出(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	4
+doubao-seed-2.0-code输入(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	1.2
+doubao-seed-2.0-code输出(输入区间：32000-128000 输出区间：0-无限)-中国大陆	全时段	6
+doubao-seed-2.0-code输入(输入区间：128000-256000 输出区间：0-无限)-中国大陆	全时段	2.4
+doubao-seed-2.0-code输出(输入区间：128000-256000 输出区间：0-无限)-中国大陆	全时段	12
+minimax/minimax-m2.5-highspeed输入-中国大陆	全时段	1.05
+minimax/minimax-m2.5-highspeed输出-中国大陆	全时段	4.2
+openai/gpt-5-nano输入-中国大陆	全时段	0.09
+openai/gpt-5-nano输出-中国大陆	全时段	0.72
+gemini-3.1-flash-image-preview输入-中国大陆	全时段	0.9
+gemini-3.1-flash-image-preview图片输出-中国大陆	全时段	108
+gemini-3.1-flash-image-preview文本输出-中国大陆	全时段	5.4
+openai/gpt-5-chat输入-中国大陆	全时段	2.25
+openai/gpt-5-chat输出-中国大陆	全时段	18
+openai/gpt-5.2-chat输入-中国大陆	全时段	3.15
+openai/gpt-5.2-chat输出-中国大陆	全时段	25.2
+openai/gpt-5-mini输入-中国大陆	全时段	0.45
+openai/gpt-5-mini输出-中国大陆	全时段	3.6
+openai/gpt-5-pro输入-中国大陆	全时段	27
+openai/gpt-5-pro输出-中国大陆	全时段	216
+gemini-3.1-flash-lite-preview输出-中国大陆	全时段	2.71
+gemini-3.1-flash-lite-preview音频输入-中国大陆	全时段	0.9
+gemini-3.1-flash-lite-preview文本输入-中国大陆	全时段	0.45
+openai/gpt-5.4输入-中国大陆	全时段	4.5
+openai/gpt-5.4输出-中国大陆	全时段	27
+openai/gpt-5.4-mini输入-中国大陆	全时段	1.35
+openai/gpt-5.4-mini输出-中国大陆	全时段	8.1
+openai/gpt-5.4输入(输入区间：0-272000 输出区间：0-无限)-中国大陆	全时段	4.5
+openai/gpt-5.4输出(输入区间：0-272000 输出区间：0-无限)-中国大陆	全时段	27
+openai/gpt-5.4输入(输入区间：272000-无限 输出区间：0-无限)-中国大陆	全时段	9
+openai/gpt-5.4输出(输入区间：272000-无限 输出区间：0-无限)-中国大陆	全时段	40.5
+openai/gpt-5.4-pro输入(输入区间：0-272000 输出区间：0-无限)-中国大陆	全时段	54
+openai/gpt-5.4-pro输出(输入区间：0-272000 输出区间：0-无限)-中国大陆	全时段	324
+openai/gpt-5.4-pro输入(输入区间：272000-无限 输出区间：0-无限)-中国大陆	全时段	108
+openai/gpt-5.4-pro输出(输入区间：272000-无限 输出区间：0-无限)-中国大陆	全时段	486
+minimax/minimax-m2.7输入-中国大陆	全时段	0.52
+minimax/minimax-m2.7输出-中国大陆	全时段	2.1
+openai/gpt-5.4-nano输入-中国大陆	全时段	0.36
+openai/gpt-5.4-nano输出-中国大陆	全时段	2.25
+qwen/qwen3.5-plus输出(输入区间：256000-无限 输出区间：0-无限)-中国大陆	全时段	6
+qwen/qwen3.5-plus缓存输入(输入区间：256000-无限 输出区间：0-无限)-中国大陆	全时段	0.1
+qwen/qwen3.5-plus缓存创建(输入区间：256000-无限 输出区间：0-无限)-中国大陆	全时段	1.25
+qwen/qwen3.5-plus非缓存输入(输入区间：256000-无限 输出区间：0-无限)-中国大陆	全时段	1
+qwen/qwen3.5-plus输出(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	1.2
+qwen/qwen3.5-plus缓存输入(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.02
+qwen/qwen3.5-plus缓存创建(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.25
+qwen/qwen3.5-plus非缓存输入(输入区间：0-128000 输出区间：0-无限)-中国大陆	全时段	0.2
+qwen/qwen3.5-plus输出(输入区间：128000-256000 输出区间：0-无限)-中国大陆	全时段	3
+qwen/qwen3.5-plus缓存输入(输入区间：128000-256000 输出区间：0-无限)-中国大陆	全时段	0.05
+qwen/qwen3.5-plus缓存创建(输入区间：128000-256000 输出区间：0-无限)-中国大陆	全时段	0.63
+qwen/qwen3.5-plus非缓存输入(输入区间：128000-256000 输出区间：0-无限)-中国大陆	全时段	0.5
+qwen/qwen3.6-plus输出(输入区间：256000-无限 输出区间：0-无限)-中国大陆	全时段	12
+qwen/qwen3.6-plus缓存输入(输入区间：256000-无限 输出区间：0-无限)-中国大陆	全时段	0.2
+qwen/qwen3.6-plus缓存创建(输入区间：256000-无限 输出区间：0-无限)-中国大陆	全时段	2.5
+qwen/qwen3.6-plus非缓存输入(输入区间：256000-无限 输出区间：0-无限)-中国大陆	全时段	2
+qwen/qwen3.6-plus输出(输入区间：0-256000 输出区间：0-无限)-中国大陆	全时段	3
+qwen/qwen3.6-plus缓存输入(输入区间：0-256000 输出区间：0-无限)-中国大陆	全时段	0.05
+qwen/qwen3.6-plus缓存创建(输入区间：0-256000 输出区间：0-无限)-中国大陆	全时段	0.63
+qwen/qwen3.6-plus非缓存输入(输入区间：0-256000 输出区间：0-无限)-中国大陆	全时段	0.5
+z-ai/glm-5.1输入(输入区间：32000-无限 输出区间：0-无限)-中国大陆	全时段	2
+z-ai/glm-5.1输出(输入区间：32000-无限 输出区间：0-无限)-中国大陆	全时段	7
+z-ai/glm-5.1输入(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	1.5
+z-ai/glm-5.1输出(输入区间：0-32000 输出区间：0-无限)-中国大陆	全时段	6
+anthropic/claude-4.7-opus输出-中国大陆	全时段	45
+anthropic/claude-4.7-opus缓存输入-中国大陆	全时段	0.9
+anthropic/claude-4.7-opus缓存创建-中国大陆	全时段	11.25
+anthropic/claude-4.7-opus非缓存输入-中国大陆	全时段	9
+moonshotai/kimi-k2.6输入-中国大陆	全时段	1.63
+moonshotai/kimi-k2.6输出-中国大陆	全时段	6.75
+openai/gpt-image-2图片输入-中国大陆	全时段	14.4
+openai/gpt-image-2图片输出-中国大陆	全时段	54
+openai/gpt-image-2文本输入-中国大陆	全时段	9
+deepseek/deepseek-v4-flash输入-中国大陆	全时段	0.25
+deepseek/deepseek-v4-flash输出-中国大陆	全时段	0.5
+deepseek/deepseek-v4-pro输入-中国大陆	全时段	3
+deepseek/deepseek-v4-pro输出-中国大陆	全时段	6
+openai/gpt-5.5输入(输入区间：272000-无限 输出区间：0-无限)-中国大陆	全时段	9
+openai/gpt-5.5输出(输入区间：272000-无限 输出区间：0-无限)-中国大陆	全时段	54
+openai/gpt-5.5输入(输入区间：0-272000 输出区间：0-无限)-中国大陆	全时段	18
+openai/gpt-5.5输出(输入区间：0-272000 输出区间：0-无限)-中国大陆	全时段	81`;
+
+    // ─────────── 解析构建 ───────────
+    const coeffMap = {};
+    const allRefEntries = [];
+
+    const lines = RAW_COEFF_TEXT.split('\n').filter(l => l.trim() !== '');
+    lines.forEach(line => {
+        const parts = line.split('\t');
+        if (parts.length < 3) return;
+        const rawName = parts[0].trim();
+        const period = parts[1]?.trim() || '全时段';
+        const coeff = parseFloat(parts[2]);
+        if (isNaN(coeff)) return;
+
+        let modelName = '';
+        let ioType = '';
+        let tierKey = 'standard';
+        let rangeDesc = '-';
+
+        const bracketMatch = rawName.match(/^(.+?)(输入|输出|图片输入|图片输出|文本输入|文本输出|音频输入|视频输入|缓存输入|缓存创建|非缓存输入)(.*)$/);
+        if (bracketMatch) {
+            modelName = bracketMatch[1].replace(/\s*模型\s*(推理)?/g, '').trim();
+            ioType = bracketMatch[2].trim();
+            const rest = bracketMatch[3] || '';
+            const inputRangeMatch = rest.match(/输入区间[：:]\s*(\d+[-~]\d+|无限|\d+[-~]无限)/);
+            if (inputRangeMatch) {
+                rangeDesc = inputRangeMatch[1].replace(/[-~]/g, '-').replace(/\s/g, '');
+                tierKey = rangeDesc;
+            } else if (rest.includes('批量')) {
+                tierKey = 'batch';
+                rangeDesc = '-';
+            } else {
+                tierKey = 'standard';
+                rangeDesc = '-';
+            }
+        } else {
+            const simpleMatch = rawName.match(/^(.+?)(输入|输出|图片输入|图片输出|文本输入|文本输出|音频输入|视频输入|缓存输入|缓存创建|非缓存输入)/);
+            if (simpleMatch) {
+                modelName = simpleMatch[1].replace(/\s*模型\s*(推理)?/g, '').trim();
+                ioType = simpleMatch[2].trim();
+                if (rawName.includes('批量')) tierKey = 'batch';
+                rangeDesc = '-';
+            } else {
+                return;
+            }
+        }
+
+        modelName = modelName.replace(/\s*-\s*中国大陆$/, '').trim();
+
+        if (!coeffMap[modelName]) coeffMap[modelName] = {};
+        if (!coeffMap[modelName][tierKey]) coeffMap[modelName][tierKey] = { input: null, output: null };
+        if (ioType.includes('输入') && !ioType.includes('输出')) {
+            coeffMap[modelName][tierKey].input = coeff;
+        } else if (ioType.includes('输出') || ioType.includes('图片输出') || ioType.includes('文本输出')) {
+            coeffMap[modelName][tierKey].output = coeff;
+        }
+
+        allRefEntries.push({ model: modelName, ioType, range: rangeDesc === tierKey && tierKey !== 'standard' ? rangeDesc : (rangeDesc || '-'), period, coeff, tierKey });
+    });
+
+    Object.keys(coeffMap).forEach(model => {
+        Object.keys(coeffMap[model]).forEach(tier => {
+            const entry = coeffMap[model][tier];
+            if (entry.input === null) entry.input = 0;
+            if (entry.output === null) entry.output = 0;
+        });
+    });
+
+    function getDefaultTier(modelName) {
+        const tiers = coeffMap[modelName];
+        if (!tiers) return 'standard';
+        const keys = Object.keys(tiers);
+        if (keys.includes('standard')) return 'standard';
+        if (keys.includes('0-200000')) return '0-200000';
+        if (keys.includes('batch')) return 'batch';
+        return keys[0] || 'standard';
+    }
+
+    function computeBilled(rawIn, rawOut, modelName, tierKey) {
+        const modelTiers = coeffMap[modelName];
+        if (!modelTiers) return { billed: rawIn + rawOut, inCoeff: 1, outCoeff: 1 };
+        const tier = modelTiers[tierKey] || modelTiers[getDefaultTier(modelName)] || { input: 1, output: 1 };
+        const billed = rawIn * tier.input + rawOut * tier.output;
+        return { billed: Math.round(billed * 100) / 100, inCoeff: tier.input, outCoeff: tier.output };
+    }
+
+    function getModelTierOptions(modelName) {
+        const tiers = coeffMap[modelName];
+        if (!tiers) return [];
+        return Object.keys(tiers).map(tier => {
+            const t = tiers[tier];
+            let label = tier;
+            if (tier === 'standard') label = '标准';
+            else if (tier === 'batch') label = '批量';
+            return { tier, label, inCoeff: t.input, outCoeff: t.output };
+        });
+    }
+
+    // ─────────── API 与渲染 ───────────
+    const API_URL = (key, gran, start, end) => {
+        const s = new Date(start + 'T00:00:00+08:00').toISOString().replace(/\.\d{3}Z$/, '+08:00');
+        const e = new Date(end + 'T23:59:59+08:00').toISOString().replace(/\.\d{3}Z$/, '+08:00');
+        return `${API_BASE}${USAGE_EP}?granularity=${gran}&start=${encodeURIComponent(s)}&end=${encodeURIComponent(e)}`;
+    };
+
+    let rawChart = null, billedChart = null, selectedTiers = {}, currentDailyData = [], currentModelUsage = {};
+
+    async function fetchData() {
+        const key = document.getElementById('apiKeyInput').value.trim();
+        if (!key) { alert('请输入API Key'); return; }
+        const gran = document.getElementById('granularitySelect').value;
+        const start = document.getElementById('startDateInput').value;
+        const end = document.getElementById('endDateInput').value;
+        try {
+            const resp = await fetch(API_URL(key, gran, start, end), { headers: { Authorization: `Bearer ${key}` } });
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const json = await resp.json();
+            if (!json.status || !json.data) throw new Error(json.error || '数据异常');
+            parseAndRender(json.data);
+        } catch (e) {
+            console.error(e);
+            document.getElementById('corsNote').classList.add('show');
+            alert('查询失败：' + e.message);
+        }
+    }
+
+    function parseAndRender(apiData) {
+        const dailyMap = {}, modelUsage = {};
+        apiData.forEach(entry => {
+            const modelId = entry.id, modelName = entry.name || modelId;
+            if (!modelUsage[modelId]) modelUsage[modelId] = { rawIn: 0, rawOut: 0, displayName: modelName };
+            (entry.items || []).forEach(item => {
+                const isInput = item.name.includes('输入');
+                const isOutput = item.name.includes('输出');
+                (item.categories || []).forEach(cat => {
+                    (cat.values || []).forEach(val => {
+                        const date = val.time ? val.time.split('T')[0] : 'unknown';
+                        if (!dailyMap[date]) dailyMap[date] = {};
+                        if (!dailyMap[date][modelId]) dailyMap[date][modelId] = { rawIn: 0, rawOut: 0 };
+                        if (isInput) { dailyMap[date][modelId].rawIn += val.value;
+                            modelUsage[modelId].rawIn += val.value; } else if (isOutput) { dailyMap[date][modelId]
+                                .rawOut += val.value;
+                            modelUsage[modelId].rawOut += val.value; }
+                    });
+                });
+            });
+        });
+        const dailyData = Object.keys(dailyMap).sort().map(date => {
+            const models = dailyMap[date];
+            let totalIn = 0, totalOut = 0;
+            Object.values(models).forEach(v => { totalIn += v.rawIn;
+                totalOut += v.rawOut; });
+            return { date, models, totalRawIn: totalIn, totalRawOut: totalOut };
+        });
+        currentDailyData = dailyData;
+        currentModelUsage = modelUsage;
+        renderCharts();
+        renderModelTable();
+        updateSummary();
+    }
+
+    function renderCharts() {
+        const ctx1 = document.getElementById('rawTokenChart').getContext('2d');
+        if (rawChart) rawChart.destroy();
+        rawChart = new Chart(ctx1, { type: 'bar', data: { labels: currentDailyData.map(d => d.date), datasets: [
+                    { label: '原始输入 (K)', data: currentDailyData.map(d => d.totalRawIn), backgroundColor: '#5b8def' },
+                    { label: '原始输出 (K)', data: currentDailyData.map(d => d.totalRawOut), backgroundColor: '#34d399' }
+                ] }, options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }, plugins: { tooltip: { mode: 'index' } } } });
+
+        const ctx2 = document.getElementById('billedTokenChart').getContext('2d');
+        if (billedChart) billedChart.destroy();
+        const billedData = currentDailyData.map(d => {
+            let sum = 0;
+            Object.keys(d.models).forEach(mid => {
+                const tier = selectedTiers[mid] || getDefaultTier(mid);
+                sum += computeBilled(d.models[mid].rawIn, d.models[mid].rawOut, mid, tier).billed;
+            });
+            return sum;
+        });
+        billedChart = new Chart(ctx2, { type: 'bar', data: { labels: currentDailyData.map(d => d.date), datasets: [{ label: '计费 Token (K)', data: billedData, backgroundColor: '#f59e0b' }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } } });
+    }
+
+    function renderModelTable() {
+        const tbody = document.getElementById('modelDetailTbody');
+        tbody.innerHTML = '';
+        const ids = Object.keys(currentModelUsage);
+        if (!ids.length) { tbody.innerHTML = '<tr><td colspan="8">暂无数据</td></tr>'; return; }
+        let totalBilled = 0;
+        ids.forEach(id => {
+            const u = currentModelUsage[id];
+            const rawTotal = u.rawIn + u.rawOut;
+            const defTier = getDefaultTier(id);
+            selectedTiers[id] = defTier;
+            const res = computeBilled(u.rawIn, u.rawOut, id, defTier);
+            totalBilled += res.billed;
+            const options = getModelTierOptions(id);
+            const multi = options.length > 1;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${u.displayName}${multi ? ' <span class="badge multi">多区间</span>' : ''}</td>
+                <td>${u.rawIn.toFixed(2)}</td><td>${u.rawOut.toFixed(2)}</td><td>${rawTotal.toFixed(2)}</td>
+                <td class="inCoeff">${res.inCoeff}</td><td class="outCoeff">${res.outCoeff}</td><td class="billed">${res.billed.toFixed(2)}</td>
+                <td>${multi ? `<select class="coeff-select" data-id="${id}">${options.map(o => `<option value="${o.tier}" ${o.tier===defTier?'selected':''}>${o.label} (${o.inCoeff}/${o.outCoeff})</option>`).join('')}</select>` : '标准'}</td>`;
+            tbody.appendChild(tr);
+        });
+        const totalTr = document.createElement('tr');
+        totalTr.className = 'row-total';
+        totalTr.innerHTML = `<td>合计</td><td>${ids.reduce((s,id)=>s+currentModelUsage[id].rawIn,0).toFixed(2)}</td><td>${ids.reduce((s,id)=>s+currentModelUsage[id].rawOut,0).toFixed(2)}</td><td>${(ids.reduce((s,id)=>s+currentModelUsage[id].rawIn+currentModelUsage[id].rawOut,0)).toFixed(2)}</td><td>-</td><td>-</td><td id="gtBilled">${totalBilled.toFixed(2)}</td><td></td>`;
+        tbody.appendChild(totalTr);
+        tbody.querySelectorAll('.coeff-select').forEach(s => s.addEventListener('change', function() {
+            const id = this.dataset.id;
+            selectedTiers[id] = this.value;
+            const row = this.closest('tr');
+            const u = currentModelUsage[id];
+            const r = computeBilled(u.rawIn, u.rawOut, id, this.value);
+            row.querySelector('.inCoeff').textContent = r.inCoeff;
+            row.querySelector('.outCoeff').textContent = r.outCoeff;
+            row.querySelector('.billed').textContent = r.billed.toFixed(2);
+            let gt = 0;
+            document.querySelectorAll('#modelDetailTbody tr:not(.row-total) .billed').forEach(c => gt += parseFloat(c.textContent));
+            document.getElementById('gtBilled').textContent = gt.toFixed(2);
+            renderCharts();
+            updateSummary();
+        }));
+    }
+
+    function updateSummary() {
+        let ti = 0, to = 0, tb = 0;
+        Object.keys(currentModelUsage).forEach(id => {
+            const u = currentModelUsage[id];
+            ti += u.rawIn; to += u.rawOut;
+            tb += computeBilled(u.rawIn, u.rawOut, id, selectedTiers[id] || getDefaultTier(id)).billed;
+        });
+        document.getElementById('sumRawTotal').textContent = (ti + to).toFixed(2);
+        document.getElementById('sumRawOut').textContent = to.toFixed(2);
+        document.getElementById('sumRawIn').textContent = ti.toFixed(2);
+        document.getElementById('sumBilled').textContent = tb.toFixed(2);
+    }
+
+    function renderRefTable(filter = '') {
+        const tbody = document.getElementById('coeffRefTbody');
+        const noRes = document.getElementById('coeffNoResult');
+        tbody.innerHTML = '';
+        const f = filter.trim().toLowerCase();
+        const filtered = f ? allRefEntries.filter(e => e.model.toLowerCase().includes(f) || e.ioType.includes(f)) : allRefEntries;
+        if (!filtered.length) { noRes.style.display = 'block'; return; }
+        noRes.style.display = 'none';
+        filtered.forEach(e => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${e.model}</td><td>${e.ioType}</td><td>${e.range}</td><td>${e.period}</td><td>${e.coeff}</td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
+    document.getElementById('queryBtn').onclick = fetchData;
+    document.getElementById('resetBtn').onclick = () => {
+        ['apiKeyInput','startDateInput','endDateInput'].forEach(id => {
+            const el = document.getElementById(id);
+            if (id==='apiKeyInput') el.value='';
+            else if (id==='startDateInput') el.value='2026-04-30';
+            else el.value='2026-05-12';
+        });
+        document.getElementById('corsNote').classList.remove('show');
+        if (rawChart) rawChart.destroy();
+        if (billedChart) billedChart.destroy();
+        document.getElementById('modelDetailTbody').innerHTML = '<tr><td colspan="8">暂无数据</td></tr>';
+        ['sumRawTotal','sumRawOut','sumRawIn','sumBilled'].forEach(id => document.getElementById(id).textContent='--');
+        currentDailyData=[]; currentModelUsage={};
+    };
+    document.getElementById('coeffSearchInput').oninput = function() { renderRefTable(this.value); };
+
+    renderRefTable();
+    console.log('工具就绪，内置系数项：', allRefEntries.length);
+})();
+</script>
+</body>
+</html>

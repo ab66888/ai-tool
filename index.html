@@ -1,76 +1,65 @@
-
- 
-<头>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>API Key 用量查询工具</title>
-    <script src="https://cdn.jsdelivr.net/npm(chart.js@4.4.7/dist/chart.umd.min.js">
-    </脚本>
-    <样式>
-        :根目录 {
-            --背景: #f5f6f8;
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js">
+    </script>
+    <style>
+        :root {
+            --bg: #f5f6f8;
             --card-bg: #ffffff;
-            --边框: #e2e6ed;
-            --文本: #1a1d23;
-            --文本-次要: #5f6673;
-            --主要: #3b6ff5;
-            -- accent-green: #10b981;
-            -- accent-orange: #f59e0b;
-            --输入背景: #f9fafb;
-            --阴影大小：0 1像素 2像素 rgba(0, 0, 0, 0.04);
-            --半径：10像素;
-            --半径-小：6像素;
+            --border: #e2e6ed;
+            --text: #1a1d23;
+            --text-secondary: #5f6673;
+            --primary: #3b6ff5;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --input-bg: #f9fafb;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+            --radius: 10px;
+            --radius-sm: 6px;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', 'PingFang SC', sans-serif; background: var(--bg); color: var(--text); padding: 16px; }
-        .容器 { 最大宽度: 1100像素; 边距: 0 自动; 显示: 弹性布局; 弹性方向: 列; 间隔: 16像素; }
+        .container { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
         .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; box-shadow: var(--shadow-sm); }
-        .card-header { 字体大小: 15px; 字体粗细: 600; 下边距: 14px; 显示: 弹性布局; 对齐方式: 居中; 间隔: 8px; }
-        .icon-dot { 宽度: 8px; 高度: 8px; 边框半径: 50%; 背景: 变量(--主要); }
+        .card-header { font-size: 15px; font-weight: 600; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+        .icon-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); }
         .icon-dot.green { background: var(--accent-green); }
-        .icon-dot.橙色 { 背景: 变量(--强调橙色); }
+        .icon-dot.orange { background: var(--accent-orange); }
         .config-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
-        .配置项 { 显示: 弹性布局; 弹性方向: 列; 间隔: 4像素; 最小宽度: 120像素; }
-        .配置项 标签 { 字体大小: 12像素; 字体粗细: 600; 颜色: 变量(--文本次要); }
-        .配置项 输入,
-        .配置项 选择 { 高度: 36像素; 内边距: 0 10像素; 边框: 1像素 实线 变量(--边框); 边框半径: 变量(--半径-sm); 字体大小: 13像素; 背景: 变量(--输入背景); 轮廓: 无; }
-        配置项输入框聚焦时config-item input:focus,
-        .config-item select:focus { border-color: var(--primary); }config-item select:focus { border-color: var(--primary); }
-        .btn { height: 36px; padding: 0 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; cursor: pointer; border: none; }btn { height: 36px; padding: 0 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; cursor: pointer; border: none; }
-        .btn-primary { background: var(--primary); color: #fff; }btn-primary { background: var(--primary); color: #fff; }
-        .btn-outline { background: #fff; color: var(--text-secondary); border: 1px solid var(--border); }btn-outline { background: #fff; color: var(--text-secondary); border: 1px solid var(--border); }
-        .summary-row { display: flex; flex-wrap: wrap; gap: 16px; }summary-row { display: flex; flex-wrap: wrap; gap: 16px; }
-        .summary-item { flex: 1; min-width: 120px; background: var(--input-bg); border-radius: var(--radius-sm); padding: 14px 12px; border: 1px solid var(--border); }summary-item { flex: 1; min-width: 120px; background: var(--input-bg); border-radius: var(--radius-sm); padding: 14px 12px; border: 1px solid var(--border); }
-        .summary-item .label { font-size: 11px; font-weight: 600; color: var(--text-secondary); }summary-item .label { font-size: 11px; font-weight: 600; color: var(--text-secondary); }
-        .summary-item .value { font-size: 20px; font-weight: 700; }summary-item .value { font-size: 20px; font-weight: 700; }
-        图表容器 { 高度: 320px; 顶部边距: 8px; }chart-wrap { height: 320px; margin-top: 8px; }
-        图表容器的高度设置为280像素。chart-wrap.short { height: 280px; }
-        table-wrap { overflow-x: auto; }table-wrap { overflow-x: auto; }
-        { max-height: 440px; overflow-y: auto; }table-wrap.scrollable { max-height: 440px; overflow-y: auto; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 700px; }table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 700px; }
-        表头 th { 背景: #f8f9fb; 字体重量: 600; 颜色: var(--text-secondary); 字体大小: 11px; 填充: 10px; 水平对齐: 右; 下边框: 2px 固定 (--border); 不换行; }table thead th { background: #f8f9fb; font-weight: 600; color: var(--text-secondary); font-size: 11px; padding: 10px; text-align: right; border-bottom: 2px solid var(--border); white-space: nowrap; }
-        表头表格 th 第一个子元素 { 文本对齐: 左; }table thead th:first-child { text-align: left; }
-        table tbody td { padding: 9px 10px; border-bottom: 1px solid #f0f1f4; text-align: right; font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace; font-size: 12px; white-space: nowrap; }table tbody td { padding: 9px 10px; border-bottom: 1px solid #f0f1f4; text-align: right; font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace; font-size: 12px; white-space: nowrap; }
-        table tbody td:first-child { text-align: left; font-family: 'Segoe UI', 'PingFang SC', sans-serif; font-weight: 500; font-size: 12px; }table tbody td:first-child { text-align: left; font-family: 'Segoe UI', 'PingFang SC', sans-serif; font-weight: 500; font-size: 12px; }
-        table tbody tr:hover { background: #fafbfc; }table tbody tr:hover { background: #fafbfc; }
-        .row-total { font-weight: 700; background: #f8f9fb; border-top: 2px solid var(--border); }row-total { font-weight: 700; background: #f8f9fb; border-top: 2px solid var(--border); }
-        (coeff-select { font-size: 11px; padding: 3px 6px; border-radius: 4px; border: 1px solid var(--border); background: #fff; cursor: pointer; max-width: 200px; outline: none; })coeff-select { font-size: 11px; padding: 3px 6px; border-radius: 4px; border: 1px solid var(--border); background: #fff; cursor: pointer; max-width: 200px; outline: none; }
-        .badge { font-size: 10px; padding: 2px 7px; border-radius: 10px; background: #eef3ff; color: #3b6ff5; }badge { font-size: 10px; padding: 2px 7px; border-radius: 10px; background: #eef3ff; color: #3b6ff5; }
-        badgemulti { background: #fef3c7; color: #b45309; }badge.multi { background: #fef3c7; color: #b45309; }
-        搜索框的样式定义。search-wrap { position: relative; margin-bottom: 10px; }
-        搜索框样式
-```css
-.search-wrap input {
-  width: 100%;
-  height: 36px;
-  padding: 0 12px 0 34px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  font-size: 13px;
-  background: var(--input-bg);
-}
-```search-wrap input { width: 100%; height: 36px; padding: 0 12px 0 34px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--input-bg); }
-        .search-wrap .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #a0a7b3; }search-wrap .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #a0a7b3; }
+        .config-item { display: flex; flex-direction: column; gap: 4px; min-width: 120px; }
+        .config-item label { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+        .config-item input,
+        .config-item select { height: 36px; padding: 0 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--input-bg); outline: none; }
+        .config-item input:focus,
+        .config-item select:focus { border-color: var(--primary); }
+        .btn { height: 36px; padding: 0 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; cursor: pointer; border: none; }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-outline { background: #fff; color: var(--text-secondary); border: 1px solid var(--border); }
+        .summary-row { display: flex; flex-wrap: wrap; gap: 16px; }
+        .summary-item { flex: 1; min-width: 120px; background: var(--input-bg); border-radius: var(--radius-sm); padding: 14px 12px; border: 1px solid var(--border); }
+        .summary-item .label { font-size: 11px; font-weight: 600; color: var(--text-secondary); }
+        .summary-item .value { font-size: 20px; font-weight: 700; }
+        .chart-wrap { height: 320px; margin-top: 8px; }
+        .chart-wrap.short { height: 280px; }
+        .table-wrap { overflow-x: auto; }
+        .table-wrap.scrollable { max-height: 440px; overflow-y: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 700px; }
+        table thead th { background: #f8f9fb; font-weight: 600; color: var(--text-secondary); font-size: 11px; padding: 10px; text-align: right; border-bottom: 2px solid var(--border); white-space: nowrap; }
+        table thead th:first-child { text-align: left; }
+        table tbody td { padding: 9px 10px; border-bottom: 1px solid #f0f1f4; text-align: right; font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace; font-size: 12px; white-space: nowrap; }
+        table tbody td:first-child { text-align: left; font-family: 'Segoe UI', 'PingFang SC', sans-serif; font-weight: 500; font-size: 12px; }
+        table tbody tr:hover { background: #fafbfc; }
+        .row-total { font-weight: 700; background: #f8f9fb; border-top: 2px solid var(--border); }
+        .coeff-select { font-size: 11px; padding: 3px 6px; border-radius: 4px; border: 1px solid var(--border); background: #fff; cursor: pointer; max-width: 200px; outline: none; }
+        .badge { font-size: 10px; padding: 2px 7px; border-radius: 10px; background: #eef3ff; color: #3b6ff5; }
+        .badge.multi { background: #fef3c7; color: #b45309; }
+        .search-wrap { position: relative; margin-bottom: 10px; }
+        .search-wrap input { width: 100%; height: 36px; padding: 0 12px 0 34px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--input-bg); }
+        .search-wrap .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #a0a7b3; }
         .no-result { text-align: center; padding: 24px; color: var(--text-secondary); }
         .cors-note { font-size: 11px; color: #ef4444; margin-top: 8px; padding: 8px 12px; background: #fef2f2; border-radius: var(--radius-sm); display: none; }
         .loading-msg { text-align: center; padding: 10px; color: var(--primary); }

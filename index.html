@@ -847,15 +847,77 @@ qwen/qwen3.7-plus缓存创建 (输入区间：256000 - 无限 输出区间：0 -
 qwen/qwen3.7-plus非缓存输入 (输入区间：256000 - 无限 输出区间：0 - 无限)- 中国大陆 全时段 1.5
 qwen/qwen3.5-plus显式缓存输入 (输入区间：0-128000 输出区间：0 - 无限)- 中国大陆 全时段 0.02
 qwen/qwen3.5-plus显式缓存输入 (输入区间：128000-256000 输出区间：0 - 无限)- 中国大陆 全时段 0.05
-qwen/qwen3.5-plus显式缓存输入 (输入区间：256000 - 无限 输出区间：0 - 无限)- 中国大陆 全时段 0.1`;
+qwen/qwen3.5-plus显式缓存输入 (输入区间：256000 - 无限 输出区间：0 - 无限)- 中国大陆 全时段 0.1
+deepseek/deepseek-v4-flash-20260731（高峰） 输出-中国大陆	全时段	2.25
+deepseek/deepseek-v4-flash-20260731（空闲） 输出-中国大陆	全时段	1.13
+deepseek/deepseek-v4-flash-20260731（高峰） 缓存输入-中国大陆	全时段	0.03
+deepseek/deepseek-v4-flash-20260731（空闲） 缓存输入-中国大陆	全时段	0.01
+deepseek/deepseek-v4-flash-20260731（高峰） 非缓存输入-中国大陆	全时段	0.75
+deepseek/deepseek-v4-flash-20260731（空闲） 非缓存输入-中国大陆	全时段	0.38
+deepseek/deepseek-v4-pro-0813（高峰） 输出-中国大陆	全时段	6.75
+deepseek/deepseek-v4-pro-0813（空闲） 输出-中国大陆	全时段	3.38
+deepseek/deepseek-v4-pro-0813（高峰） 缓存输入-中国大陆	全时段	0.07
+deepseek/deepseek-v4-pro-0813（空闲） 缓存输入-中国大陆	全时段	0.04
+deepseek/deepseek-v4-pro-0813（高峰） 非缓存输入-中国大陆	全时段	2.25
+deepseek/deepseek-v4-pro-0813（空闲） 非缓存输入-中国大陆	全时段	1.13`;
 
     // ─────────── 解析系数映射 ───────────
     const coeffMap = {};
     const allRefEntries = [];
     const lines = RAW_COEFF_TEXT.split('\n').filter(l => l.trim() !== '');
-    lines.forEach(line => {
-        const parts = line.split('\t');
-        if (parts.length < 3) return;
+lines.forEach(line => {
+// ---------- 新增：正则优先提取（处理空格分隔的行） ----------
+const fullMatch = line.match(/^(.+?)\s*(输入|输出|图片输入|图片输出|文本输入|文本输出|音频输入|视频输入|缓存输入|缓存创建|非缓存输入|显式缓存输入)\s*(?:\(.*?\))?\s*(?:-?\s*中国大陆)?\s*(?:全时段)\s*([\d.]+)$/);
+if (fullMatch) {
+    const rawName = fullMatch[1].trim() + fullMatch[2].trim();
+    const ioType = fullMatch[2].trim();
+    const coeff = parseFloat(fullMatch[3]);
+    if (isNaN(coeff)) return;
+    
+    // 构建 modelName（清理多余词）
+    let modelName = fullMatch[1].trim();
+    modelName = modelName.replace(/\s*模型\s*(推理)?/g, '').trim();
+    modelName = modelName.replace(/\s*token\s*/g, '').trim();
+    modelName = modelName.replace(/\s*-\s*中国大陆$/, '').trim();
+    
+    // 确定 tierKey 和 rangeDesc
+    let tierKey = 'standard';
+    let rangeDesc = '-';
+    const rangeMatch = rawName.match(/输入区间[：:]\s*(\d+[-~]\d+|无限|\d+[-~]无限)/);
+    if (rangeMatch) {
+        rangeDesc = rangeMatch[1].replace(/[-~]/g, '-').replace(/\s/g, '');
+        tierKey = rangeDesc;
+    } else if (rawName.includes('批量')) {
+        tierKey = 'batch';
+        rangeDesc = '-';
+    }
+    
+    // 存入 coeffMap
+    if (!coeffMap[modelName]) coeffMap[modelName] = {};
+    if (!coeffMap[modelName][tierKey]) coeffMap[modelName][tierKey] = { input: null, output: null };
+    if (ioType.includes('输入') && !ioType.includes('输出')) {
+        coeffMap[modelName][tierKey].input = coeff;
+    } else if (ioType.includes('输出') || ioType.includes('图片输出') || ioType.includes('文本输出')) {
+        coeffMap[modelName][tierKey].output = coeff;
+    } else {
+        coeffMap[modelName][tierKey].input = coeff; // 默认
+    }
+    allRefEntries.push({
+        model: modelName,
+        ioType,
+        range: rangeDesc === tierKey && tierKey !== 'standard' ? rangeDesc : (rangeDesc || '-'),
+        period: '全时段',
+        coeff,
+        tierKey
+    });
+    return; // 成功处理，跳过后续分割逻辑
+}
+// ---------- 新增结束 ----------
+    let parts = line.split('\t');
+    if (parts.length < 3) {
+        parts = line.split(/\s{2,}/);
+    }
+    if (parts.length < 3) return;
         const rawName = parts[0].trim();
         const period = parts[1]?.trim() || '全时段';
         const coeff = parseFloat(parts[2]);
@@ -864,9 +926,10 @@ qwen/qwen3.5-plus显式缓存输入 (输入区间：256000 - 无限 输出区间
         let ioType = '';
         let tierKey = 'standard';
         let rangeDesc = '-';
-        const bracketMatch = rawName.match(/^(.+?)(输入|输出|图片输入|图片输出|文本输入|文本输出|音频输入|视频输入|缓存输入|缓存创建|非缓存输入)(.*)$/);
+        const bracketMatch = rawName.match(/^(.+?)\s*(输入|输出|图片输入|图片输出|文本输入|文本输出|音频输入|视频输入|缓存输入|缓存创建|非缓存输入|显式缓存输入)\s*(?:\(.*?\))?/);
         if (bracketMatch) {
             modelName = bracketMatch[1].replace(/\s*模型\s*(推理)?/g, '').trim();
+            modelName = modelName.replace(/\s*token\s*/g, '').trim();
             ioType = bracketMatch[2].trim();
             const rest = bracketMatch[3] || '';
             const inputRangeMatch = rest.match(/输入区间[：:]\s*(\d+[-~]\d+|无限|\d+[-~]无限)/);
@@ -881,9 +944,10 @@ qwen/qwen3.5-plus显式缓存输入 (输入区间：256000 - 无限 输出区间
                 rangeDesc = '-';
             }
         } else {
-            const simpleMatch = rawName.match(/^(.+?)(输入|输出|图片输入|图片输出|文本输入|文本输出|音频输入|视频输入|缓存输入|缓存创建|非缓存输入)/);
+            const simpleMatch = rawName.match(/^(.+?)\s*(输入|输出|图片输入|图片输出|文本输入|文本输出|音频输入|视频输入|缓存输入|缓存创建|非缓存输入|显式缓存输入)/);
             if (simpleMatch) {
                 modelName = simpleMatch[1].replace(/\s*模型\s*(推理)?/g, '').trim();
+                modelName = modelName.replace(/\s*token\s*/g, '').trim();
                 ioType = simpleMatch[2].trim();
                 if (rawName.includes('批量')) tierKey = 'batch';
                 rangeDesc = '-';

@@ -77,8 +77,8 @@
         <div class="config-row">
             <div class="config-item" style="flex:2"><label>API KEY</label><input type="text" id="apiKeyInput" placeholder="请输入 API Key (sk-...)" value=""></div>
             <div class="config-item"><label>时间粒度</label><select id="granularitySelect"><option value="day" selected>按天</option></select></div>
-            <div class="config-item"><label>开始日期</label><input type="date" id="startDateInput" value="2026-04-30"></div>
-            <div class="config-item"><label>结束日期</label><input type="date" id="endDateInput" value="2026-05-12"></div>
+            <div class="config-item"><label>开始日期</label><input type="date" id="startDateInput" ></div>
+            <div class="config-item"><label>结束日期</label><input type="date" id="endDateInput"></div>
             <div class="config-item"><label>&nbsp;</label><div style="display:flex;gap:8px;"><button class="btn btn-primary" id="queryBtn">查询周期</button><button class="btn btn-outline" id="resetBtn">重置</button></div></div>
         </div>
         <div class="cors-note" id="corsNote">⚠ CORS 错误：请安装 Moesif CORS 浏览器插件。Key 仅保存在本地浏览器。</div>
@@ -1213,19 +1213,53 @@ if (fullMatch) {
     }
 
     document.getElementById('queryBtn').onclick = fetchData;
-    document.getElementById('resetBtn').onclick = () => {
-        document.getElementById('apiKeyInput').value = '';
-        document.getElementById('startDateInput').value = '2026-04-30';
-        document.getElementById('endDateInput').value = '2026-05-12';
-        document.getElementById('corsNote').classList.remove('show');
-        if (rawChart) rawChart.destroy();
-        if (billedChart) billedChart.destroy();
-        document.getElementById('modelDetailTbody').innerHTML = '<tr><td colspan="8">暂无数据</td></tr>';
-        ['sumRawTotal','sumRawOut','sumRawIn','sumBilled'].forEach(id => document.getElementById(id).textContent='--');
-    };
+document.getElementById('resetBtn').onclick = () => {
+    document.getElementById('apiKeyInput').value = '';
+    setDefaultDates();  // ← 替换原来的两行赋值
+    document.getElementById('corsNote').classList.remove('show');
+    if (rawChart) rawChart.destroy();
+    if (billedChart) billedChart.destroy();
+    document.getElementById('modelDetailTbody').innerHTML = '<tr><td colspan="8">暂无数据</td></tr>';
+    ['sumRawTotal','sumRawOut','sumRawIn','sumBilled'].forEach(id => document.getElementById(id).textContent='--');
+};
     document.getElementById('coeffSearchInput').oninput = function() { renderRefTable(this.value); };
 
+// 设置默认日期：结束日期为今天，开始日期为今天往前推30天
+function setDefaultDates() {
+    const now = new Date();
+    // 结束日期 = 今天
+    const endDate = now.toISOString().split('T')[0];
+    // 开始日期 = 今天 - 30天
+    const start = new Date(now);
+    start.setDate(start.getDate() - 30);
+    const startDate = start.toISOString().split('T')[0];
+    document.getElementById('startDateInput').value = startDate;
+    document.getElementById('endDateInput').value = endDate;
+}
     renderRefTable('');
+// 设置默认日期为动态
+function setDefaultDates() {
+    const now = new Date();
+    const endDate = now.toISOString().split('T')[0];
+    const start = new Date(now);
+    start.setDate(start.getDate() - 30);
+    const startDate = start.toISOString().split('T')[0];
+    document.getElementById('startDateInput').value = startDate;
+    document.getElementById('endDateInput').value = endDate;
+}
+setDefaultDates();
+
+// 重置按钮改用动态日期
+document.getElementById('resetBtn').onclick = () => {
+    document.getElementById('apiKeyInput').value = '';
+    setDefaultDates();  // 动态重置日期
+    document.getElementById('corsNote').classList.remove('show');
+    if (rawChart) rawChart.destroy();
+    if (billedChart) billedChart.destroy();
+    document.getElementById('modelDetailTbody').innerHTML = '<tr><td colspan="8">暂无数据</td></tr>';
+    ['sumRawTotal','sumRawOut','sumRawIn','sumBilled'].forEach(id => document.getElementById(id).textContent='--');
+};
+setDefaultDates();
 })();
 </script>
 </body>
